@@ -1316,15 +1316,18 @@ document.getElementById('btnStartVoice').addEventListener('click', () => {
     voiceRecognition.lang = 'fr-FR';
     voiceRecognition.continuous = true;
     voiceRecognition.interimResults = true;
-    let finalTranscript = '';
+    // Reconstruit systématiquement le texte à partir de l'intégralité de event.results
+    // (et non en ajoutant au fur et à mesure), car certains navigateurs mobiles renvoient
+    // plusieurs fois le même segment "final" — l'accumulation provoquait des mots en double/triple.
     voiceRecognition.onresult = (event) => {
+      let finalText = '';
       let interim = '';
-      for(let i = event.resultIndex; i < event.results.length; i++){
+      for(let i = 0; i < event.results.length; i++){
         const t = event.results[i][0].transcript;
-        if(event.results[i].isFinal) finalTranscript += t + ' ';
+        if(event.results[i].isFinal) finalText += t + ' ';
         else interim += t;
       }
-      document.getElementById('voiceTranscript').value = (finalTranscript + interim).trim();
+      document.getElementById('voiceTranscript').value = (finalText + interim).trim();
     };
     voiceRecognition.onerror = (event) => {
       statusEl.textContent = "Micro indisponible (" + event.error + "). Cette fonctionnalité peut être bloquée dans cet environnement — utilisez le micro du clavier de votre téléphone dans « Visite manuelle » à la place.";
