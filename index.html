@@ -1316,6 +1316,7 @@ document.querySelectorAll('#modalVoice [data-close]').forEach(btn => btn.addEven
 let voiceManualTranscript = '';
 let voiceRecognizing = false;
 let voiceUserStopped = false;
+let voicePendingText = '';
 
 function startOneListeningPass(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1324,19 +1325,18 @@ function startOneListeningPass(){
   voiceRecognition.lang = 'fr-FR';
   voiceRecognition.continuous = false; // on gère nous-mêmes la continuité, voir commentaire ci-dessus
   voiceRecognition.interimResults = true;
+  voicePendingText = '';
 
+  // Important : on ne se fie PAS au marqueur "isFinal" du navigateur — sur certains moteurs (ex.
+  // Samsung Internet), chaque fragment intermédiaire de la phrase est marqué final par erreur, ce qui
+  // provoquait des mots dupliqués même après un premier correctif. On garde uniquement le texte du
+  // DERNIER résultat reçu pour cette écoute (la meilleure transcription à l'instant T), et on ne le
+  // valide qu'une seule fois, à la toute fin de l'écoute (onend).
   voiceRecognition.onresult = (event) => {
-    let interim = '';
-    for(let i = 0; i < event.results.length; i++){
-      const t = event.results[i][0].transcript;
-      if(event.results[i].isFinal){
-        const clean = t.trim();
-        if(clean) voiceManualTranscript = (voiceManualTranscript ? voiceManualTranscript + ' ' : '') + clean;
-      } else {
-        interim = t;
-      }
-    }
-    document.getElementById('voiceTranscript').value = (voiceManualTranscript + (interim ? ' ' + interim : '')).trim();
+    const lastIdx = event.results.length - 1;
+    if(lastIdx < 0) return;
+    voicePendingText = event.results[lastIdx][0].transcript;
+    document.getElementById('voiceTranscript').value = (voiceManualTranscript + (voicePendingText ? ' ' + voicePendingText : '')).trim();
   };
   voiceRecognition.onerror = (event) => {
     // "no-speech" (silence) et "aborted" (arrêt volontaire) sont normaux en écoute continue simulée :
@@ -1349,8 +1349,13 @@ function startOneListeningPass(){
     }
   };
   voiceRecognition.onend = () => {
+    // Validation définitive du texte de cette écoute — une seule fois, ici, jamais dans onresult.
+    const clean = (voicePendingText || '').trim();
+    if(clean) voiceManualTranscript = (voiceManualTranscript ? voiceManualTranscript + ' ' : '') + clean;
+    voicePendingText = '';
+    document.getElementById('voiceTranscript').value = voiceManualTranscript;
     if(voiceRecognizing && !voiceUserStopped){
-      try{ startOneListeningPass(); }catch(e){ voiceRecognizing = false; }
+      try{ setTimeout(() => { if(voiceRecognizing && !voiceUserStopped) startOneListeningPass(); }, 250); }catch(e){ voiceRecognizing = false; }
     } else {
       document.getElementById('btnStartVoice').style.display = 'inline-block';
       document.getElementById('btnStopVoice').style.display = 'none';
