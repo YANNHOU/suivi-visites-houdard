@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Visites Clients — Houdard</title>
+<style>
+:root{
+  --navy:#0f2544; --navy-light:#1c3a63; --red:#c8102e; --red-dark:#a30d26;
+  --green:#1e8e5a; --green-bg:#e6f6ee; --amber:#e08e00; --amber-bg:#fff4e0;
+  --grey:#8a94a6; --grey-bg:#eef0f3; --bg:#f4f6f9; --card:#ffffff;
+  --border:#e1e5ec; --text:#1b2333; --text-mut:#5b6472; --shadow:0 2px 10px rgba(15,37,68,.08);
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+header.topbar{background:linear-gradient(90deg,var(--navy),var(--navy-light));color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:50;}
+header.topbar h1{font-size:18px;margin:0;font-weight:600;letter-spacing:.3px;}
+header.topbar .sub{font-size:12px;color:#c7d3e6;margin-top:2px;}
+.topbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+button{cursor:pointer;font-family:inherit;}
+.btn{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--navy);transition:.15s;}
+.btn:hover{background:var(--grey-bg);}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff;}
+.btn-primary:hover{background:var(--red-dark);}
+.btn-navy{background:var(--navy);border-color:var(--navy);color:#fff;}
+.btn-navy:hover{background:var(--navy-light);}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;}
+.btn-ghost:hover{background:rgba(255,255,255,.12);}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px;}
+.container{max-width:1500px;margin:0 auto;padding:18px 20px 60px;}
+.dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;border-left:4px solid var(--navy);}
+.card.green{border-color:var(--green);} .card.red{border-color:var(--red);} .card.grey{border-color:var(--grey);} .card.amber{border-color:var(--amber);}
+.card .num{font-size:24px;font-weight:700;line-height:1.1;}
+.card .lbl{font-size:11.5px;color:var(--text-mut);margin-top:4px;text-transform:uppercase;letter-spacing:.3px;}
+.section-title{font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin:22px 0 8px;}
+.toolbar{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.toolbar input[type=text], .toolbar select, .toolbar input[type=number]{border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);background:#fff;}
+.toolbar input[type=text]{min-width:220px;}
+.filter-chip{border:1px solid var(--border);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--text-mut);}
+.filter-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.view-toggle button{border:none;background:#fff;padding:7px 14px;font-size:12.5px;font-weight:600;color:var(--text-mut);}
+.view-toggle button.active{background:var(--navy);color:#fff;}
+.spacer{flex:1;}
+.table-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto;max-height:70vh;}
+table.annual{border-collapse:separate;border-spacing:0;width:100%;min-width:1200px;}
+table.annual thead th{position:sticky;top:0;background:var(--navy);color:#fff;padding:10px 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;z-index:5;text-align:center;white-space:nowrap;}
+table.annual thead th.client-col{left:0;z-index:20;text-align:left;padding-left:14px;}
+table.annual td{border-bottom:1px solid var(--border);padding:6px 6px;font-size:12px;vertical-align:top;min-width:82px;}
+table.annual td.client-col{position:sticky;left:0;background:#fff;z-index:4;font-weight:600;color:var(--navy);padding:8px 14px;cursor:pointer;min-width:220px;max-width:260px;border-right:2px solid var(--border);}
+table.annual td.client-col:hover{color:var(--red);text-decoration:underline;}
+table.annual tr:hover td{background:#f7f9fc;}
+table.annual tr:hover td.client-col{background:#f7f9fc;}
+.status-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle;}
+.dot-green{background:var(--green);} .dot-red{background:var(--red);} .dot-grey{background:var(--grey);}
+.row-green td.client-col{border-left:4px solid var(--green);}
+.row-red td.client-col{border-left:4px solid var(--red);}
+.row-grey td.client-col{border-left:4px solid var(--grey);}
+.row-deleted td{opacity:.5;}
+.row-deleted td.client-col{font-style:italic;}
+.date-chip{display:inline-block;background:var(--grey-bg);border-radius:5px;padding:2px 5px;font-size:11px;margin:1px 2px 1px 0;cursor:pointer;color:var(--navy);font-weight:600;border:1px solid var(--border);}
+.date-chip.uncertain{background:var(--amber-bg);border-color:var(--amber);color:#8a5c00;}
+.sub-city{font-size:10.5px;color:var(--text-mut);font-weight:400;}
+#tooltip{position:fixed;max-width:340px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 30px rgba(15,37,68,.25);padding:12px 14px;font-size:12.5px;z-index:200;display:none;line-height:1.5;}
+#tooltip h4{margin:0 0 6px;font-size:12.5px;color:var(--navy);}
+#tooltip .tt-section{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);}
+#tooltip .tt-label{font-weight:700;color:var(--text-mut);font-size:10.5px;text-transform:uppercase;}
+#tooltip .prio-haute{color:var(--red);font-weight:700;}
+#tooltip .prio-moyenne{color:var(--amber);font-weight:700;}
+#tooltip .prio-faible{color:var(--green);font-weight:700;}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,20,30,.55);display:none;align-items:flex-start;justify-content:center;z-index:300;padding:30px 16px;overflow:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:12px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--navy);color:#fff;border-radius:12px 12px 0 0;}
+.modal-header h3{margin:0;font-size:16px;}
+.modal-header .x{cursor:pointer;font-size:20px;line-height:1;background:none;border:none;color:#fff;}
+.modal-body{padding:18px 20px;max-height:70vh;overflow:auto;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.form-row{margin-bottom:12px;}
+.form-row label{display:block;font-size:12px;font-weight:700;color:var(--text-mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.2px;}
+.form-row input[type=text], .form-row input[type=date], .form-row select, .form-row textarea{width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;}
+.form-row textarea{min-height:90px;resize:vertical;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fiche-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:14px;font-size:13px;}
+.fiche-grid div span.k{color:var(--text-mut);font-weight:600;display:inline-block;min-width:110px;}
+.history-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#fbfcfe;}
+.history-item .hdate{font-weight:700;color:var(--navy);font-size:12.5px;}
+.history-item .htxt{margin-top:4px;font-size:12.5px;line-height:1.5;}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;text-transform:uppercase;}
+.badge-todo{background:#fde4e1;color:var(--red);} .badge-progress{background:var(--amber-bg);color:#8a5c00;} .badge-done{background:var(--green-bg);color:var(--green);}
+.empty-state{padding:40px;text-align:center;color:var(--text-mut);}
+.tabs{display:flex;gap:4px;margin-bottom:14px;}
+.tab-btn{background:#fff;border:1px solid var(--border);border-bottom:none;padding:9px 18px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px;color:var(--text-mut);}
+.tab-btn.active{color:var(--navy);background:var(--card);box-shadow:0 -2px 0 var(--red) inset;}
+.hint{font-size:11.5px;color:var(--text-mut);margin-top:4px;}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;display:inline-block;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.candidate-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.candidate-item{border:1px solid var(--border);border-radius:7px;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;}
+.candidate-item:hover{background:var(--grey-bg);}
+.candidate-item input{margin:0;}
+.file-drop{border:2px dashed var(--border);border-radius:10px;padding:22px;text-align:center;color:var(--text-mut);cursor:pointer;}
+.file-drop:hover{border-color:var(--navy);}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.month-grid .dow{font-size:11px;color:var(--text-mut);font-weight:700;text-align:center;text-transform:uppercase;}
+.month-cell{min-height:78px;border:1px solid var(--border);border-radius:7px;padding:5px;background:#fff;font-size:11px;}
+.month-cell .dnum{font-weight:700;color:var(--text-mut);font-size:11px;}
+.month-cell .vlink{display:block;margin-top:3px;background:var(--grey-bg);border-radius:4px;padding:2px 4px;font-size:10.5px;color:var(--navy);cursor:pointer;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.month-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.priority-select{display:flex;gap:6px;}
+.priority-opt{border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600;}
+.priority-opt.sel-haute.sel{background:#fde4e1;border-color:var(--red);color:var(--red);}
+.priority-opt.sel-moyenne.sel{background:var(--amber-bg);border-color:var(--amber);color:#8a5c00;}
+.priority-opt.sel-faible.sel{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.uncertain-flag{background:var(--amber-bg);border:1px solid var(--amber);color:#8a5c00;border-radius:7px;padding:8px 10px;font-size:12px;margin-top:8px;}
+footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20px;}
+::-webkit-scrollbar{height:10px;width:10px;} ::-webkit-scrollbar-thumb{background:#c6ccd6;border-radius:6px;}
+@media print{header,.toolbar,.dashboard,.tabs{display:none;}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>Suivi Visites Clients</h1>
+    <div class="sub" id="headerSub">Houdard — Secteurs 91 / 78 / 28</div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" id="btnOpenSettings">⚙️ Paramètres</button>
+    <button class="btn btn-ghost btn-sm" id="btnForceSync" title="Renvoyer les données de cet appareil vers votre compte Claude">🔄 Forcer la synchro</button>
+    <button class="btn btn-ghost btn-sm" id="btnExport">⭳ Exporter</button>
+    <button class="btn btn-ghost btn-sm" id="btnImportTrigger">⭱ Importer un fichier</button>
+    <button class="btn btn-ghost btn-sm" id="btnImportPasteTrigger">📋 Coller des données</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+    <button class="btn btn-navy" id="btnNewVisitManual">+ Visite manuelle</button>
+    <button class="btn btn-primary" id="btnNewVisitPhoto">📷 Ajouter par photo</button>
+    <button class="btn btn-primary" id="btnNewVisitVoice">🎤 Visite vocale</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="dashboard" id="dashboard"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="suivi">Suivi des visites</button>
+    <button class="tab-btn" data-tab="actions">Actions à réaliser</button>
+  </div>
+
+  <div id="tab-suivi">
+    <div class="toolbar">
+      <input type="text" id="searchBox" placeholder="Rechercher : raison sociale, ville, code postal...">
+      <select id="yearSelect"></select>
+      <div class="view-toggle">
+        <button class="active" data-view="annual">Vue annuelle</button>
+        <button data-view="calendar">Vue calendrier</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-sm" id="btnToday">Aujourd'hui</button>
+      <button class="btn btn-sm" id="btnResetFilters">Tous les clients</button>
+    </div>
+
+    <div class="toolbar" id="filterChips" style="gap:8px;">
+      <button class="filter-chip active" data-filter="tous">Tous</button>
+      <button class="filter-chip" data-filter="recent">🟢 Visités récemment</button>
+      <button class="filter-chip" data-filter="revisiter">🔴 À revisiter</button>
+      <button class="filter-chip" data-filter="jamais">⚪ Jamais visités</button>
+      <button class="filter-chip" data-filter="moisEnCours">Visites du mois</button>
+      <button class="filter-chip" data-filter="anneeEnCours">Visites de l'année</button>
+      <button class="filter-chip" data-filter="supprimes">🗑 Supprimés</button>
+    </div>
+
+    <div id="viewAnnual" class="table-wrap">
+      <table class="annual" id="annualTable"></table>
+    </div>
+
+    <div id="viewCalendar" style="display:none;">
+      <div class="month-nav">
+        <button class="btn btn-sm" id="prevMonth">‹ Mois précédent</button>
+        <strong id="monthLabel" style="color:var(--navy);font-size:14px;"></strong>
+        <button class="btn btn-sm" id="nextMonth">Mois suivant ›</button>
+      </div>
+      <div class="month-grid" id="monthGrid"></div>
+    </div>
+  </div>
+
+  <div id="tab-actions" style="display:none;">
+    <div class="toolbar">
+      <select id="actionStatusFilter">
+        <option value="tous">Tous les statuts</option>
+        <option value="À faire">À faire</option>
+        <option value="En cours">En cours</option>
+        <option value="Terminé">Terminé</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="btn btn-navy btn-sm" id="btnNewAction">+ Nouvelle action</button>
+    </div>
+    <div class="table-wrap" style="max-height:none;">
+      <table class="annual" id="actionsTable" style="min-width:900px;"></table>
+    </div>
+  </div>
+
+  <footer class="appfoot">Fichier autonome — données stockées localement dans ce navigateur (localStorage). Pensez à exporter régulièrement une sauvegarde JSON.</footer>
+</div>
+
+<div id="tooltip"></div>
+
+<!-- MODAL: Fiche client -->
+<div class="modal-overlay" id="modalFiche">
+  <div class="modal">
+    <div class="modal-header"><h3 id="ficheTitle">Client</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body" id="ficheBody"></div>
+    <div class="modal-footer"><button class="btn" data-close>Fermer</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Nouvelle visite manuelle -->
+<div class="modal-overlay" id="modalVisit">
+  <div class="modal">
+    <div class="modal-header"><h3>Nouvelle visite</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>Client</label>
+        <input type="text" id="visitClientSearch" placeholder="Tapez pour rechercher un client...">
+        <div id="visitClientResults" style="max-height:150px;overflow:auto;margin-top:4px;"></div>
+        <input type="hidden" id="visitClientId">
+        <div class="hint" id="visitClientChosen"></div>
+      </div>
+      <div class="two-col">
+        <div class="form-row"><label>Date de visite</label><input type="date" id="visitDate"></div>
+        <div class="form-row"><label>Interlocuteur (optionnel)</label><input type="text" id="visitInterlocuteur"></div>
+      </div>
+      <div class="form-row">
+        <label>Compte rendu <span id="crReformuleHint" style="display:none;font-weight:600;color:var(--green);text-transform:none;">— corrigé et reformulé par l'IA</span></label>
+        <textarea id="visitCompteRendu" placeholder="Décrivez la visite (ou collez le texte transcrit d'une photo)..."></textarea>
+      </div>
+      <button class="btn btn-navy btn-sm" id="btnAnalyzeText">✨ Analyser avec l'IA</button>
+      <span id="analyzeTextStatus" class="hint"></span>
+      <div id="analysisFields" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+        <div class="two-col">
+          <div class="form-row"><label>Besoins identifiés</label><textarea id="fBesoins" style="min-height:50px;"></textarea></div>
+          <div class="form-row"><label>Produits évoqués</label><textarea id="fProduits" style="min-height:50px;"></textarea></div>
+        </div>
+        <div class="two-col">
+          <div class="form-row"><label>Devis à prévoir</label><textarea id="fDevis" style="min-height:50px;"></textarea></div>
+          <div class="form-row"><label>Opportunités</label><textarea id="fOpportunites" style="min-height:50px;"></textarea></div>
+        </div>
+        <div class="two-col">
+          <div class="form-row"><label>Problèmes rencontrés</label><textarea id="fProblemes" style="min-height:50px;"></textarea></div>
+          <div class="form-row"><label>Action à réaliser</label><textarea id="fAction" style="min-height:50px;"></textarea></div>
+        </div>
+        <div class="two-col">
+          <div class="form-row"><label>Date de relance recommandée</label><input type="date" id="fDateRelance"></div>
+          <div class="form-row"><label>Priorité</label>
+            <div class="priority-select">
+              <div class="priority-opt sel-haute" data-prio="Haute">🔴 Haute</div>
+              <div class="priority-opt sel-moyenne" data-prio="Moyenne">🟠 Moyenne</div>
+              <div class="priority-opt sel-faible" data-prio="Faible">🟢 Faible</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row"><label>Recommandation commerciale</label><textarea id="fRecommandation" style="min-height:50px;"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Annuler</button>
+      <button class="btn btn-primary" id="btnSaveVisit">Enregistrer la visite</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ajout par photo -->
+<div class="modal-overlay" id="modalPhoto">
+  <div class="modal">
+    <div class="modal-header"><h3>Ajouter un compte rendu par photo</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <div class="file-drop" id="photoDrop">📷 Cliquez ou déposez une photo du compte rendu (JPG/PNG)</div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none">
+      <div id="photoPreviewWrap" style="margin-top:10px;"></div>
+      <div id="photoStatus" class="hint" style="margin-top:8px;"></div>
+      <div class="hint">⚠️ Cette fonctionnalité d'analyse automatique par IA nécessite une connexion active et l'exécution dans l'environnement Claude (elle ne fonctionnera pas si ce fichier est ouvert hors ligne, en simple double-clic, sans accès à l'API). Le reste de l'outil fonctionne intégralement hors ligne.</div>
+      <div id="photoResultArea" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Annuler</button>
+      <button class="btn btn-primary" id="btnConfirmPhotoVisit" style="display:none;">Confirmer et enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Message / confirmation interne (remplace alert/confirm natifs, bloqués dans certains environnements) -->
+<div class="modal-overlay" id="modalAppMsg">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header"><h3 id="appMsgTitle">Information</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body"><p id="appMsgText" style="margin:0;font-size:13.5px;line-height:1.6;"></p></div>
+    <div class="modal-footer" id="appMsgFooter"></div>
+  </div>
+</div>
+
+<!-- MODAL: Paramètres / synchronisation cloud Firebase (optionnel) -->
+<div class="modal-overlay" id="modalSettings">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header"><h3>⚙️ Paramètres — Synchronisation cloud</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <p class="hint" style="margin-top:0;">Optionnel. Configurez une synchronisation en temps réel entre tous vos appareils via une base de données Firebase gratuite. Sans configuration, l'outil continue de fonctionner comme avant (compte Claude ou stockage local selon l'environnement).</p>
+      <div class="form-row">
+        <label>Configuration Firebase (coller l'objet firebaseConfig copié depuis la console Firebase)</label>
+        <textarea id="fbConfigInput" style="min-height:110px;font-family:monospace;font-size:11.5px;" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", ...}'></textarea>
+      </div>
+      <div class="two-col">
+        <div class="form-row"><label>Email</label><input type="text" id="fbEmail"></div>
+        <div class="form-row"><label>Mot de passe</label><input type="password" id="fbPassword"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-navy btn-sm" id="btnFbSaveConfig">Enregistrer la configuration</button>
+        <button class="btn btn-primary btn-sm" id="btnFbLogin">Se connecter</button>
+        <button class="btn btn-sm" id="btnFbLogout" style="display:none;">Se déconnecter</button>
+      </div>
+      <div id="fbStatus" class="hint" style="margin-top:10px;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" data-close>Fermer</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Export des données (copier/coller — le téléchargement automatique de fichier est bloqué dans cet environnement) -->
+<div class="modal-overlay" id="modalExport">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h3>Exporter mes données</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--text-mut);margin-top:0;">Le téléchargement automatique de fichier ne fonctionne pas dans cet environnement. Copiez le texte ci-dessous (déjà sélectionné) avec <b>Ctrl+C</b>, puis collez-le (Ctrl+V) dans un nouveau fichier texte que vous enregistrez avec l'extension <b>.json</b> — vous pourrez ensuite le réimporter via "Coller des données" dans le fichier téléchargé sur votre PC.</p>
+      <textarea id="exportTextArea" readonly style="width:100%;min-height:260px;font-family:monospace;font-size:11.5px;"></textarea>
+      <div id="exportCopyStatus" class="hint" style="margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Fermer</button>
+      <button class="btn btn-primary" id="btnDoCopyExport">📋 Copier</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Import par collage de texte -->
+<div class="modal-overlay" id="modalImportPaste">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h3>Coller des données à importer</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <p style="font-size:12.5px;color:var(--text-mut);margin-top:0;">Collez ici (Ctrl+V) le contenu JSON précédemment exporté.</p>
+      <textarea id="importPasteArea" style="width:100%;min-height:260px;font-family:monospace;font-size:11.5px;" placeholder='{"clients": {...}, "actions": [...]}'></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Annuler</button>
+      <button class="btn btn-primary" id="btnDoImportPaste">Importer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ajout par voix -->
+<div class="modal-overlay" id="modalVoice">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h3>Ajouter une visite par la voix</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <div id="voiceRecordArea">
+        <p class="hint" style="margin-top:0;">Appuyez sur "Démarrer", parlez naturellement (ex : <i>"Visite chez Cadribois aujourd'hui, on a parlé de panneaux OSB, envoyer un devis sous 10 jours"</i>), puis sur "Terminer et analyser".</p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+          <button class="btn btn-navy btn-sm" id="btnStartVoice">🎤 Démarrer</button>
+          <button class="btn btn-primary btn-sm" id="btnStopVoice" style="display:none;">⏹ Terminer et analyser</button>
+          <span id="voiceRecStatus" class="hint"></span>
+        </div>
+        <textarea id="voiceTranscript" readonly style="width:100%;min-height:120px;" placeholder="La transcription apparaîtra ici au fur et à mesure que vous parlez..."></textarea>
+        <div class="hint">⚠️ Le microphone peut être bloqué dans certains environnements (comme les téléchargements/confirmations l'ont été). Si ça ne fonctionne pas, utilisez le micro du clavier de votre téléphone directement dans le champ "Compte rendu" de "Visite manuelle", puis "Analyser avec l'IA".</div>
+      </div>
+      <div id="voiceResultArea" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Annuler</button>
+      <button class="btn btn-primary" id="btnConfirmVoiceVisit" style="display:none;">Confirmer et enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nouvelle action -->
+<div class="modal-overlay" id="modalAction">
+  <div class="modal">
+    <div class="modal-header"><h3>Nouvelle action</h3><button class="x" data-close>&times;</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>Client</label>
+        <input type="text" id="actionClientSearch" placeholder="Tapez pour rechercher un client...">
+        <div id="actionClientResults" style="max-height:150px;overflow:auto;margin-top:4px;"></div>
+        <input type="hidden" id="actionClientId">
+        <div class="hint" id="actionClientChosen"></div>
+      </div>
+      <div class="form-row"><label>Action</label><input type="text" id="actionLabel" placeholder="Ex: Relancer devis toiture"></div>
+      <div class="two-col">
+        <div class="form-row"><label>Date recommandée</label><input type="date" id="actionDateRec"></div>
+        <div class="form-row"><label>Statut</label>
+          <select id="actionStatut"><option>À faire</option><option>En cours</option><option>Terminé</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close>Annuler</button>
+      <button class="btn btn-primary" id="btnSaveAction">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== DONNEES CLIENTS (import initial Excel — ne jamais modifier ce bloc à la main) ===================== */
+const BASE_CLIENTS = [{"id":"LES-FLECHES","raisonSociale":"LES FLECHES","adresse":"17  rue du Bois d'ardeau","cp":"91640","ville":"VAUGRIGNEUSE","email":"etsdocarmo@wanadoo.fr","tel":"","visits":[],"actions":[]},{"id":"CADRIBOIS","raisonSociale":"CADRIBOIS","adresse":"ROUTE DE ST MARTIN","cp":"78730","ville":"SAINTE MESME","email":"cadribois@gmail.com","tel":"0130411794","visits":[],"actions":[]},{"id":"DLP-BAT","raisonSociale":"DLP BAT","adresse":"49 BIS RUE DE CHARTRES","cp":"28630","ville":"MORANCEZ","email":"luc.poitrimol@wanadoo.fr","tel":"0607227336","visits":[],"actions":[]},{"id":"GUYOMARD-PATRICK","raisonSociale":"GUYOMARD PATRICK","adresse":"19 RUE DITTE","cp":"78470","ville":"SAINT REMY LES CHEVREUSE","email":"p-guyomard@wanadoo.fr","tel":"0607657501","visits":[],"actions":[]},{"id":"JEAN-GREGORY","raisonSociale":"JEAN GREGORY","adresse":"39 RUE DE RACINE","cp":"78470","ville":"SAINT REMY LES CHEVREUSE","email":"gregoryjean@gmail.com","tel":"0681154638","visits":[],"actions":[]},{"id":"VMA-BTP","raisonSociale":"VMA BTP","adresse":"27 AVENUE LEONARD DE VINCI","cp":"28100","ville":"DREUX","email":"vmabtp@gmail.com","tel":"0781390918","visits":[],"actions":[]},{"id":"JEM-SERVICES","raisonSociale":"JEM SERVICES","adresse":"29 RUE DE LA CROIX POQUET","cp":"91650","ville":"BREUILLET","email":"jemservice@hotmail.fr","tel":"0169949218","visits":[],"actions":[]},{"id":"AGENCEMENT-NOVEL","raisonSociale":"AGENCEMENT NOVEL","adresse":"13 PLACE DE L EGLISE","cp":"28170","ville":"TREMBLAY LES VILLAGES","email":"agencement.novel@gmail.com","tel":"0237653382","visits":[],"actions":[]},{"id":"GREEN-CAT-TECHNOLOGIES","raisonSociale":"GREEN CAT TECHNOLOGIES","adresse":"19/21 AVENUE GUSTAVE EIFFEL","cp":"28630","ville":"GELLAINVILLE","email":"clement@scarabane.com","tel":"0234400664","visits":[],"actions":[]},{"id":"BARBEREAU-JEAN-MARC","raisonSociale":"BARBEREAU JEAN MARC","adresse":"5 BIS RUE DE LA CHATTELERIIE","cp":"28700","ville":"DENONVILLE","email":"jbmoustache@gmail.com","tel":"0677118710","visits":[],"actions":[]},{"id":"MICHEL-DIMITRI","raisonSociale":"MICHEL DIMITRI","adresse":"3 RUE DE BRISAY","cp":"28700","ville":"DENONVILLE","email":"michel-dimitri@orange.fr","tel":"0616760318","visits":[],"actions":[]},{"id":"GREEN-YARD","raisonSociale":"GREEN YARD","adresse":"3 ALLEE DES ACACIAS","cp":"78390","ville":"BOIS D ARCY","email":"contact@greenyard.fr","tel":"0130585933","visits":[],"actions":[]},{"id":"LECLERC-CHRISTIAN","raisonSociale":"LECLERC CHRISTIAN","adresse":"9 RUE DE BEAUCE LE LUET","cp":"28700","ville":"BEVILLE LE COMTE","email":"empegab@outlook.fr","tel":"0237317001","visits":[],"actions":[]},{"id":"GAEC-DE-LA-HAIZE","raisonSociale":"GAEC DE LA HAIZE","adresse":"Monsieur BRUNET JF","cp":"61110","ville":"BOISSY MAUGIS","email":"francois.brunet61@wanadoo.fr","tel":"0233838285","visits":[],"actions":[]},{"id":"LG-BAT","raisonSociale":"LG BAT","adresse":"10 RUE DE L OREE DU BOIS","cp":"78730","ville":"PONTHEVRARD","email":"gomesluis79@gmail.com","tel":"0784239858","visits":[],"actions":[]},{"id":"TROUDET-MARC","raisonSociale":"TROUDET MARC","adresse":"258 RUE DES SARMATES","cp":"91530","ville":"SERMAISE","email":"marc.troudet@gmail.com","tel":"0784243990","visits":[],"actions":[]},{"id":"AMIYO","raisonSociale":"AMIYO","adresse":"27 RUE DES MARNIERES","cp":"28210","ville":"VILLEMEUX SUR EURE","email":"contact@artdecor78.fr","tel":"0130418870","visits":[],"actions":[]},{"id":"SOMODEM","raisonSociale":"SOMODEM","adresse":"50 AVENUE DE PARIS ZI","cp":"91670","ville":"ANGERVILLE","email":"herve@somodem.fr","tel":"0169951550","visits":[],"actions":[]},{"id":"DA-COSTA-AGOSTINHO-CARLOS","raisonSociale":"DA COSTA AGOSTINHO CARLOS","adresse":"70 RUE LONGPONT","cp":"91310","ville":"LONGPONT SUR ORGE","email":"alberto.dacosta1973@gmail.com","tel":"0630657612","visits":[],"actions":[]},{"id":"SERRE-EN-BOIS","raisonSociale":"SERRE EN BOIS","adresse":"26 RUE DU POTEAU DES 3 SEIGNEURS","cp":"78120","ville":"RAMBOUILLET","email":"hector@serreenbois.com","tel":"0618321561","visits":[],"actions":[]},{"id":"FERRE-JONATHAN","raisonSociale":"FERRE JONATHAN","adresse":"33 RUE CHARLES DE GAULLE","cp":"78860","ville":"ST NOM LA BRETECHE","email":"jonathanferre@sfr.fr","tel":"0672171465","visits":[],"actions":[]},{"id":"ENERIA","raisonSociale":"ENERIA","adresse":"RUE DE LONGPONT","cp":"91310","ville":"MONTLHERY","email":"lpronier@eneria.com","tel":"0169802100","visits":[],"actions":[]},{"id":"ALFRED-JEAN","raisonSociale":"ALFRED JEAN","adresse":"5 RUE DES CINQ CROIX","cp":"28300","ville":"AMILLY","email":"","tel":"0237329072","visits":[],"actions":[]},{"id":"PETIT-PASCAL","raisonSociale":"PETIT PASCAL","adresse":"98 PHILARETE CHASLES","cp":"28300","ville":"MAINVILLIERS","email":"pascal.petit0733@orange.fr","tel":"0237219533","visits":[],"actions":[]},{"id":"ROGER-PASCAL","raisonSociale":"ROGER PASCAL","adresse":"9 RUE EMILE MILOCHEAU","cp":"28700","ville":"BEVILLE LE COMTE","email":"la.couette@sfr.fr","tel":"0237312599","visits":[],"actions":[]},{"id":"MOREAU-LUDOVIC","raisonSociale":"MOREAU LUDOVIC","adresse":"54 BIS RUE DU LOIR","cp":"28150","ville":"LES VILLAGES VOVEENS","email":"ludovic.moreau82@yahoo.fr","tel":"0607680998","visits":[],"actions":[]},{"id":"LESIEUR-BAPTISTE","raisonSociale":"LESIEUR BAPTISTE","adresse":"3 PLACE DE L EGLISE","cp":"28700","ville":"CHAPELLE D AUNAINVILLE","email":"baptistelesieur@live.fr","tel":"0610613352","visits":[],"actions":[]},{"id":"ATELIER-LAIGNEAU","raisonSociale":"ATELIER LAIGNEAU","adresse":"9 bis grande rue","cp":"28630","ville":"GELLAINVILLE","email":"contact@atelierlaigneau.fr","tel":"0686655495","visits":[],"actions":[]},{"id":"LEBOSSE-YANN","raisonSociale":"LEBOSSE YANN","adresse":"4 RUE DU PARC","cp":"28310","ville":"GOMMERVILLE","email":"yannlebosse@outlook.com","tel":"","visits":[],"actions":[]},{"id":"FRANCISCO-GUILLAUME","raisonSociale":"FRANCISCO GUILLAUME","adresse":"25 RUE DE L ARMEE PATTON","cp":"91640","ville":"BRIIS SOUS FORGES","email":"","tel":"0647265277","visits":[],"actions":[]},{"id":"LAUNAY-DAVID","raisonSociale":"LAUNAY DAVID","adresse":"66 RUE DE GEROFOSSE","cp":"91150","ville":"ETAMPES","email":"","tel":"0603065019","visits":[],"actions":[]},{"id":"RIVRAY","raisonSociale":"RIVRAY","adresse":"2 RUE DES BEGUINES","cp":"28000","ville":"CHARTRES","email":"rivray@gmail.com","tel":"0237281881","visits":[],"actions":[]},{"id":"BATI-M2G","raisonSociale":"BATI M2G","adresse":"18 BIS RUE DE BEVILLE","cp":"28700","ville":"FRANCOURVILLE","email":"batim2g@orange.fr","tel":"0237249883","visits":[],"actions":[]},{"id":"IRC-BATIMENT","raisonSociale":"IRC BATIMENT","adresse":"245 RUE MARCHEL QUINET","cp":"91640","ville":"BRIIS SOUS FORGES","email":"idalio.rdacosta@gmail.com","tel":"0164908692","visits":[],"actions":[]},{"id":"JUDIBAT","raisonSociale":"JUDIBAT","adresse":"LA DALLONNERIE","cp":"78720","ville":"CERNAY LA VILLE","email":"judibat28@gmail.com","tel":"0614256057","visits":[],"actions":[]},{"id":"VITEL-DUBOIS","raisonSociale":"VITEL DUBOIS","adresse":"9 RUE DE LA SALLE","cp":"28700","ville":"CHAPELLE D AUNAINVILLE","email":"viteldubois@orange.fr","tel":"0237251708","visits":[],"actions":[]},{"id":"APE-RENOV","raisonSociale":"APE RENOV","adresse":"45 ROUTE DE L'ETANG DE LA TOUR","cp":"78125","ville":"VIEILLE EGLISE YVELINES","email":"benjamin.aperenov@gmail.com","tel":"0631628070","visits":[],"actions":[]},{"id":"AM-CONSTRUCTION","raisonSociale":"AM CONSTRUCTION","adresse":"2 PLACE ARISTIDE BRIAND","cp":"91470","ville":"LIMOURS","email":"am.constructions@hotmail.fr","tel":"0164915150","visits":[],"actions":[]},{"id":"BOURDON","raisonSociale":"BOURDON","adresse":"68 BIS ZA MONTVOISIN","cp":"91400","ville":"GOMETZ LA VILLE","email":"ent-bourdon@hotmail.fr","tel":"0160127639","visits":[],"actions":[]},{"id":"EFB-M-FRANCISCO-JULIO","raisonSociale":"EFB M FRANCISCO JULIO","adresse":"1 BIS CHEMIN DES RUELLES","cp":"91640","ville":"VAUGRIGNEUSE","email":"e.f.b@hotmail.fr","tel":"0160812024","visits":[],"actions":[]},{"id":"ORSINI","raisonSociale":"ORSINI","adresse":"ZA LA CROIX D AUNEAU","cp":"28150","ville":"OUARVILLE","email":"orsini@orsini.fr","tel":"0237221441","visits":[],"actions":[]},{"id":"SIGEBENE","raisonSociale":"SIGEBENE","adresse":"Z.I. DES SORETTES","cp":"28210","ville":"NOGENT LE ROI","email":"achats@sigebene.com","tel":"0237519472","visits":[],"actions":[]},{"id":"COUANON-FILS","raisonSociale":"COUANON FILS","adresse":"RUE DE LA REMARDE","cp":"91410","ville":"SAINT CYR SOUS DOURDAN","email":"contact@couanon-fils.fr","tel":"0164590111","visits":[],"actions":[]},{"id":"PRYBYSKI-HENRI","raisonSociale":"PRYBYSKI HENRI","adresse":"LA FOSSE FONDUE","cp":"28700","ville":"ROINVILLE","email":"henri.prybyski@wanadoo.fr","tel":"0237312528","visits":[],"actions":[]},{"id":"ROY","raisonSociale":"ROY","adresse":"5 AV. DU BOIS DES ROCHES","cp":"91190","ville":"GIF SUR YVETTE","email":"achats@roy-menuiserie.com","tel":"0169075102","visits":[],"actions":[]},{"id":"FORTIER-ANDRE","raisonSociale":"FORTIER ANDRE","adresse":"LE MOULIN DE PIERRES","cp":"77760","ville":"AMPONVILLE","email":"fortier.a@wanadoo.fr","tel":"0164243157","visits":[],"actions":[]},{"id":"FABRIQUE-MEUBLES-DE-COULOMBS","raisonSociale":"FABRIQUE MEUBLES DE COULOMBS","adresse":"16 RUE DE CHANDELLES","cp":"28210","ville":"COULOMBS","email":"sebastien@philippe-hurel.com","tel":"0237514038","visits":[],"actions":[]},{"id":"LP-BAT","raisonSociale":"LP BAT","adresse":"73 RUE DU CHATEAU","cp":"92100","ville":"BOULOGNE BILLANCOURT","email":"lpbat@hotmail.fr","tel":"","visits":[],"actions":[]},{"id":"ROBILLARD-AGENCEMENT","raisonSociale":"ROBILLARD AGENCEMENT","adresse":"16 Rue Hélène Boucher","cp":"28630","ville":"GELLAINVILLE","email":"robillard.agencement@orange.fr","tel":"0237308433","visits":[],"actions":[]},{"id":"MG-CHARPENTE","raisonSociale":"MG CHARPENTE","adresse":"62 ROUTE DE DOURDAN","cp":"91470","ville":"ANGERVILLIERS","email":"contact@mg-charpente.com","tel":"0164591126","visits":[],"actions":[]},{"id":"V-P-AGENCEMENT","raisonSociale":"V & P AGENCEMENT","adresse":"30 RUE DE LABORDE","cp":"28340","ville":"LA FERTE VIDAME","email":"vetp.agencement@orange.fr","tel":"0237364046","visits":[],"actions":[]},{"id":"PELTIER","raisonSociale":"PELTIER","adresse":"3 RUE DE TREON","cp":"28210","ville":"VILLEMEUX SUR EURE","email":"p.poirier@menuiseriepeltier.fr","tel":"0237823935","visits":[],"actions":[]},{"id":"AGENCEMENT-PICHON","raisonSociale":"AGENCEMENT PICHON","adresse":"18 RUE DU NORD","cp":"28300","ville":"ST AUBIN DES BOIS","email":"arnaud.mery@agencement-pichon.fr","tel":"0237329883","visits":[],"actions":[]},{"id":"AMBS","raisonSociale":"AMBS","adresse":"6 RUE DE LA FONTAINE CHAUDE","cp":"78660","ville":"ABLIS","email":"yoann@sarl-ambs.fr","tel":"0130468330","visits":[],"actions":[]},{"id":"MENUISERIE-GALLOU","raisonSociale":"MENUISERIE GALLOU","adresse":"25 RUE DE HAIE DU PONT","cp":"28630","ville":"FONTENAY SUR EURE","email":"menuiseriegallou@orange.fr","tel":"0237266575","visits":[],"actions":[]},{"id":"LESIEUR-BAPTISTE-2","raisonSociale":"LESIEUR BAPTISTE","adresse":"3 PLACE DE L EGLISE","cp":"28700","ville":"CHAPELLE D AUNAINVILLE","email":"baptistelesieur@live.fr","tel":"0610613352","visits":[],"actions":[]},{"id":"ENRSOL","raisonSociale":"ENRSOL","adresse":"2 RUE LATECOERE","cp":"78125","ville":"GAZERAN","email":"kenny.lamourette@enrsol.fr","tel":"0130625554","visits":[],"actions":[]},{"id":"CREABOIS-91","raisonSociale":"CREABOIS 91","adresse":"1 CHEMIN DES PRES","cp":"91720","ville":"PRUNAY SUR ESSONNE","email":"be.creabois91@creabois91.fr","tel":"0164995320","visits":[],"actions":[]},{"id":"BOIS-PAR-NATURE","raisonSociale":"BOIS PAR NATURE","adresse":"13 RUE ST HONORE","cp":"78000","ville":"VERSAILLES","email":"contact@boisparnature.com","tel":"0608697024","visits":[],"actions":[]},{"id":"FFA","raisonSociale":"FFA","adresse":"DOMAINE DES TREMEROLLES","cp":"91680","ville":"BRUYERES LE CHATEL","email":"ffamenuiserie@gmail.com","tel":"0164948263","visits":[],"actions":[]},{"id":"C-BOIS","raisonSociale":"C... BOIS","adresse":"2 rue Voltaire","cp":"78460","ville":"CHEVREUSE","email":"cr.cbois@gmail.com","tel":"0619297051","visits":[],"actions":[]},{"id":"RENAISSANCE-ET-RESTAURATION","raisonSociale":"RENAISSANCE ET RESTAURATION","adresse":"18 AVENUE DES TROIS PEUPLES","cp":"78180","ville":"MONTIGNY LE BRETONNEUX","email":"contact@renaissanceetrestauration.com","tel":"0130641175","visits":[],"actions":[]},{"id":"PIOGER-COULON","raisonSociale":"PIOGER COULON","adresse":"11 RUE DES HAUTES PRASLES","cp":"91580","ville":"ETRECHY","email":"etspiogercoulon@orange.fr","tel":"0160822266","visits":[],"actions":[]},{"id":"CHARPENTE-PELTIER","raisonSociale":"CHARPENTE PELTIER","adresse":"26 RUE PAUL DESCHANEL","cp":"28150","ville":"LES VILLAGES VOVEENS","email":"peltier@charpente-peltier.fr","tel":"0237990539","visits":[],"actions":[]},{"id":"ONO-RENOV-HABITAT","raisonSociale":"ONO RENOV HABITAT","adresse":"9 RUE DE LA GARE","cp":"91660","ville":"ESTOUCHES","email":"ono.renov.habitat@gmail.com","tel":"0603354502","visits":[],"actions":[]},{"id":"TROUDET","raisonSociale":"TROUDET","adresse":"258 RUE DES SARMATES","cp":"91530","ville":"SERMAISE","email":"marc.troudet.91@gmail.com","tel":"0784243990","visits":[],"actions":[]},{"id":"CMP-BATIMENT","raisonSociale":"CMP BATIMENT","adresse":"16 AVENUE GABRIEL LIPPMANN","cp":"91700","ville":"STE GENEVIEVE DES BOIS","email":"contact@cmpbatiment.fr","tel":"0169461461","visits":[],"actions":[]},{"id":"SDS","raisonSociale":"SDS","adresse":"5 COURS DES MARRONNIERS","cp":"78830","ville":"BULLION","email":"sdsbatiment78@gmail.com","tel":"0237912970","visits":[],"actions":[]},{"id":"AUX-CHARPENTIERS-DE-FRANCE","raisonSociale":"AUX CHARPENTIERS DE FRANCE","adresse":"Avenue de la Plesse","cp":"91140","ville":"VILLEBON SUR YVETTE","email":"v.keravec@acdf.fr","tel":"0169343260","visits":[],"actions":[]},{"id":"LONOCO-BDM","raisonSociale":"LONOCO / BDM","adresse":"51 RUE DES VAUX DE CERNAY","cp":"78610","ville":"AUFFARGIS","email":"bruno@bdm.paris","tel":"0698148271","visits":[],"actions":[]},{"id":"LAM","raisonSociale":"LAM","adresse":"19/21 AVENUE GUSTAVE EIFFEL","cp":"28630","ville":"GELLAINVILLE","email":"v.liegeas.lam@gmail.com","tel":"0954981929","visits":[],"actions":[]},{"id":"MENUISERIE-COUANON-ERIC","raisonSociale":"MENUISERIE COUANON ERIC","adresse":"RUE DE LA REMARDE","cp":"91410","ville":"ST CYR SOUS DOURDAN","email":"menuiserie.couanon@orange.fr","tel":"0637536342","visits":[],"actions":[]},{"id":"DELOT-INVEST","raisonSociale":"DELOT INVEST","adresse":"7 allee des bles","cp":"91400","ville":"GOMETZ LA VILLE","email":"eymeric.delot@gmail.com","tel":"0688224998","visits":[],"actions":[]},{"id":"JM-COUVERTURE","raisonSociale":"JM COUVERTURE","adresse":"75 Avenue Parmentier","cp":"75011","ville":"PARIS 11EME ARRONDISSEMENT","email":"jm.couvertures@gmail.com","tel":"0666000609","visits":[],"actions":[]},{"id":"GIAGNONI","raisonSociale":"GIAGNONI","adresse":"ZAC DE BEL AIR","cp":"91640","ville":"FONTENAY LES BRIIS","email":"giagnoni@wanadoo.fr","tel":"0169260959","visits":[],"actions":[]},{"id":"LE-GALLO","raisonSociale":"LE GALLO","adresse":"1 CHEMIN DES RUELLES","cp":"91640","ville":"VAUGRIGNEUSE","email":"legalloeurl@orange.fr","tel":"0164590693","visits":[],"actions":[]},{"id":"CDS","raisonSociale":"CDS","adresse":"14 RUE DE LA VIEILLE TERRIERE","cp":"91640","ville":"BRIIS SOUS FORGES","email":"couverturecds@hotmail.com","tel":"0164905672","visits":[],"actions":[]},{"id":"GRENET","raisonSociale":"GRENET","adresse":"3 RUE DE LA LIBERATION","cp":"91150","ville":"MORIGNY CHAMPIGNY","email":"richard.grenet@orange.fr","tel":"0164944796","visits":[],"actions":[]},{"id":"DUMENY-MAIN","raisonSociale":"DUMENY MAIN","adresse":"19 RUE DE L'EGLISE","cp":"28700","ville":"FRANCOURVILLE","email":"ent.dumeny@gmail.com","tel":"0237310312","visits":[],"actions":[]},{"id":"JEM-SERVICES-2","raisonSociale":"JEM SERVICES","adresse":"29 RUE DE LA CROIX POQUET","cp":"91650","ville":"BREUILLET","email":"jemservice@hotmail.fr","tel":"0169949218","visits":[],"actions":[]},{"id":"CONSTRUCTIONS-FRONTICE","raisonSociale":"CONSTRUCTIONS FRONTICE","adresse":"30 RUE DES MOULINS","cp":"91150","ville":"MORIGNY CHAMPIGNY","email":"frontice@wanadoo.fr","tel":"0164949277","visits":[],"actions":[]},{"id":"YTS","raisonSociale":"YTS","adresse":"BP 70005","cp":"78310","ville":"COIGNIERES","email":"antonio.almeida@yts-btp.fr","tel":"0134610305","visits":[],"actions":[]},{"id":"CENT-ENSEIGNEMENT-ZOOTECHNIQUE","raisonSociale":"CENT.ENSEIGNEMENT ZOOTECHNIQUE","adresse":"BERGERIE NATIONALE","cp":"78514","ville":"RAMBOUILLET CEDEX","email":"mariya.kobets@bergerie-nationale.fr","tel":"0626774950","visits":[],"actions":[]},{"id":"CENTRE-MEDICAL-DE-BLIGNY","raisonSociale":"CENTRE MEDICAL DE BLIGNY","adresse":"RUE DE BLIGNY","cp":"91640","ville":"BRIIS SOUS FORGES","email":"menuiserie@chbligny.fr","tel":"0169263045","visits":[],"actions":[]},{"id":"LES-HOPITAUX-DE-CHARTRES","raisonSociale":"LES HOPITAUX DE CHARTRES","adresse":"DIRECTION DES TRAVAUX","cp":"28000","ville":"CHARTRES","email":"servicestechniques@ch-chartres.fr","tel":"0237303029","visits":[],"actions":[]},{"id":"OFB","raisonSociale":"OFB","adresse":"12 COURS LOUIS LUMIERE","cp":"94300","ville":"VINCENNES","email":"regis.vannesson@ofb.gouv.fr","tel":"0134849807","visits":[],"actions":[]},{"id":"MAISON-DE-RETRAITE","raisonSociale":"MAISON DE RETRAITE","adresse":"FONDATION D'ALIGRE ET M.THERESE","cp":"28300","ville":"LEVES","email":"service.technique@fondation-aligre.com","tel":"0237364530","visits":[],"actions":[]},{"id":"MINISTERE-DE-LA-DEFENSE","raisonSociale":"MINISTERE DE LA DEFENSE","adresse":"SECTION TECHNIQUE ARMEE DE TERRE","cp":"78013","ville":"VERSAILLES CEDEX","email":"arnaud.mesnil@intradef.gouv.fr","tel":"0139673509","visits":[],"actions":[]},{"id":"AGMD-ECOLE-SAINT-EREMBERT","raisonSociale":"AGMD ECOLE SAINT EREMBERT","adresse":"5 RUE SALOMON REINACH","cp":"78100","ville":"ST GERMAIN EN LAYE","email":"dmatthys@saint-erembert.com","tel":"0139215858","visits":[],"actions":[]},{"id":"COLLEGE-JEAN-MACE","raisonSociale":"COLLEGE JEAN MACE","adresse":"3 PLACE JEAN MACE","cp":"28300","ville":"MAINVILLIERS","email":"laurence.cazenove@gmail.com","tel":"0237213264","visits":[],"actions":[]},{"id":"B2EI","raisonSociale":"B2EI","adresse":"3 RUE REAUMUR","cp":"28000","ville":"CHARTRES","email":"y.marecesche@b2ei.com","tel":"0237240859","visits":[],"actions":[]},{"id":"LES-FARGUSSIENS","raisonSociale":"LES FARGUSSIENS","adresse":"3 GRANDE RUE","cp":"78610","ville":"AUFFARGIS","email":"dsenra.lesfargussiens@orange.fr","tel":"0161649915","visits":[],"actions":[]},{"id":"HOPEN-DESIGN","raisonSociale":"HOPEN DESIGN","adresse":"6 AVENUE GUSTAVE EIFFEL","cp":"28630","ville":"GELLAINVILLE","email":"sebastien@hopendesign.com","tel":"0237300006","visits":[],"actions":[]},{"id":"VERT-ESPACE","raisonSociale":"VERT ESPACE","adresse":"11 BIS RUE DE LA HAIE BARDEE","cp":"28310","ville":"BAUDREVILLE","email":"","tel":"0237995456","visits":[],"actions":[]},{"id":"ATELIER-3A","raisonSociale":"ATELIER 3A","adresse":"2 RUE DES GRAVIERS","cp":"28210","ville":"LE BOULLAY THIERRY","email":"pascal.marneur@gmail.com","tel":"0237383571","visits":[],"actions":[]},{"id":"ATELIER-3A-2","raisonSociale":"ATELIER 3A","adresse":"2 RUE DES GRAVIERS","cp":"28210","ville":"LE BOULLAY THIERRY","email":"pascal.marneur@gmail.com","tel":"0237383571","visits":[],"actions":[]},{"id":"HUWER-ILE-DE-FRANCE","raisonSociale":"HUWER ILE DE FRANCE","adresse":"ZA DE LA FONTAINE CHAUDE","cp":"78660","ville":"ABLIS","email":"","tel":"0130460850","visits":[],"actions":[]},{"id":"RG-AUTO-MOTO-GARAGE-ROYER","raisonSociale":"RG AUTO MOTO GARAGE ROYER","adresse":"19 RUE D'HAUVILLE","cp":"28120","ville":"BAILLEAU LE PIN","email":"contact@concept-van-loisir.com","tel":"0237253741","visits":[],"actions":[]},{"id":"DOKA-FRANCE","raisonSociale":"DOKA FRANCE","adresse":"3 CHEMIN DES ILES","cp":"78610","ville":"LE PERRAY EN YVELINES","email":"christine.dupre@doka.com","tel":"0134842703","visits":[],"actions":[]},{"id":"TLTI","raisonSociale":"TLTI","adresse":"33 RUE DE L'ESPERANCE","cp":"75013","ville":"PARIS 13EME ARRONDISSEMENT","email":"cyril.bernadet@tlti.net","tel":"0237244959","visits":[],"actions":[]},{"id":"TLTI-2","raisonSociale":"TLTI","adresse":"33 RUE DE L'ESPERANCE","cp":"75013","ville":"PARIS 13EME ARRONDISSEMENT","email":"cyril.bernadet@tlti.net","tel":"0237244959","visits":[],"actions":[]},{"id":"TLTI-3","raisonSociale":"TLTI","adresse":"33 RUE DE L'ESPERANCE","cp":"75013","ville":"PARIS 13EME ARRONDISSEMENT","email":"cyril.bernadet@tlti.net","tel":"0237244959","visits":[],"actions":[]},{"id":"TLTI-4","raisonSociale":"TLTI","adresse":"33 RUE DE L'ESPERANCE","cp":"75013","ville":"PARIS 13EME ARRONDISSEMENT","email":"cyril.bernadet@tlti.net","tel":"0237244959","visits":[],"actions":[]},{"id":"GROISY-JEAN-FRANCOIS","raisonSociale":"GROISY JEAN FRANCOIS","adresse":"15 ROUTE DE ST BENOIT","cp":"78125","ville":"VIEILLE EGLISE YVELINES","email":"j-f.groisy@wanadoo.fr","tel":"0134572034","visits":[],"actions":[]},{"id":"COURTIES-THOMAS","raisonSociale":"COURTIES THOMAS","adresse":"4 RUE JEAN JAURES","cp":"28600","ville":"LUISANT","email":"courties@hotmail.fr","tel":"0237353468","visits":[],"actions":[]},{"id":"MAX-2-JOULES","raisonSociale":"MAX 2 JOULES","adresse":"ZA DU JAILLIER RD 116","cp":"78730","ville":"STE MESME","email":"max2joules@gmail.com","tel":"0130594075","visits":[],"actions":[]},{"id":"MARTIN-GONCALVES-CONSTRUCTIONS-XXX","raisonSociale":"MARTIN GONCALVES CONSTRUCTIONS  XXX","adresse":"44 BIS RUE DU CHEMIN VERT","cp":"78610","ville":"LE PERRAY EN YVELINES","email":"joseph.goncalves425@orange.fr","tel":"0620735798","visits":[],"actions":[]},{"id":"DE-ALMEIDA-CARLOS","raisonSociale":"DE ALMEIDA CARLOS","adresse":"5 RUE DE LA REPUBLIQUE","cp":"28630","ville":"CORANCEZ","email":"c.dealmeida94@hotmail.com","tel":"0237260693","visits":[],"actions":[]},{"id":"CHIRONI-BATIMENT","raisonSociale":"CHIRONI BATIMENT","adresse":"24 RUE DES PIECES DU CHATEAU","cp":"78125","ville":"LA BOISSIERE ECOLE","email":"christophe.chironi@orange.fr","tel":"0680452194","visits":[],"actions":[]},{"id":"LA-PENSEE-VERTE","raisonSociale":"LA PENSEE VERTE","adresse":"3 RUE DU MARCHE AU BLE","cp":"28320","ville":"GALLARDON","email":"nicolas.nepotecit@gmail.com","tel":"0625550924","visits":[],"actions":[]},{"id":"FERNANDES-JOSE","raisonSociale":"FERNANDES JOSE","adresse":"23 RUE COLBERT","cp":"78180","ville":"MONTIGNY LE BRETONNEUX","email":"fernandesferreira91@hotmail.fr","tel":"0130647887","visits":[],"actions":[]},{"id":"JUCIL","raisonSociale":"JUCIL","adresse":"7 TER RUE DE LA CHATELLERIE","cp":"28700","ville":"DENONVILLE","email":"chironi@wanadoo.fr","tel":"0613245687","visits":[],"actions":[]},{"id":"COCHEREL-89","raisonSociale":"COCHEREL 89","adresse":"30 RUE DES COSMONAUTES","cp":"28600","ville":"LUISANT","email":"","tel":"0687723221","visits":[],"actions":[]},{"id":"ISOPERF","raisonSociale":"ISOPERF","adresse":"24 RUE DU GASCOGNE","cp":"28110","ville":"LUCE","email":"jb.noel@isoperf.fr","tel":"0237289374","visits":[],"actions":[]},{"id":"F-A-P-E-C-BOIS","raisonSociale":"F A P E C (BOIS)","adresse":"PLV ET AGENCEMENTS DE MAGASINS","cp":"28120","ville":"ILLIERS COMBRAY","email":"fapec.achats@fapec.com","tel":"0237915550","visits":[],"actions":[]},{"id":"F-A-P-E-C-BOIS-2","raisonSociale":"F A P E C (BOIS)","adresse":"PLV ET AGENCEMENTS DE MAGASINS","cp":"28120","ville":"ILLIERS COMBRAY","email":"fapec.achats@fapec.com","tel":"0237915550","visits":[],"actions":[]},{"id":"F-A-P-E-C-BOIS-3","raisonSociale":"F A P E C (BOIS)","adresse":"PLV ET AGENCEMENTS DE MAGASINS","cp":"28120","ville":"ILLIERS COMBRAY","email":"fapec.achats@fapec.com","tel":"0237915550","visits":[],"actions":[]},{"id":"F-A-P-E-C-BOIS-4","raisonSociale":"F A P E C (BOIS)","adresse":"PLV ET AGENCEMENTS DE MAGASINS","cp":"28120","ville":"ILLIERS COMBRAY","email":"fapec.achats@fapec.com","tel":"0237915550","visits":[],"actions":[]},{"id":"F-A-P-E-C-BOIS-5","raisonSociale":"F A P E C (BOIS)","adresse":"PLV ET AGENCEMENTS DE MAGASINS","cp":"28120","ville":"ILLIERS COMBRAY","email":"fapec.achats@fapec.com","tel":"0237915550","visits":[],"actions":[]},{"id":"WCB","raisonSociale":"WCB","adresse":"2 RUE DES ACCACIAS","cp":"91490","ville":"MILLY LA FORET","email":"wcb-construction@hotmail.fr","tel":"0967196291","visits":[],"actions":[]},{"id":"CONCEPT-JARDINS-28","raisonSociale":"CONCEPT JARDINS 28","adresse":"1 IMPASSE DE LA TUILERIE","cp":"28630","ville":"LE COUDRAY","email":"contact@concept-jardins28.fr","tel":"0677282222","visits":[],"actions":[]},{"id":"JEREMIE-CREATION","raisonSociale":"JEREMIE CREATION","adresse":"3 IMPASSE DES VIGNES","cp":"28300","ville":"MAINVILLIERS","email":"jeremie-leroux@orange.fr","tel":"0676797885","visits":[],"actions":[]},{"id":"BERLEMONT","raisonSociale":"BERLEMONT","adresse":"45 RUE DU FORT MANOIR","cp":"78320","ville":"LE MESNIL ST DENIS","email":"sarlberlemont@gmail.com","tel":"0134856232","visits":[],"actions":[]},{"id":"RIVET-ALEXANDRE","raisonSociale":"RIVET ALEXANDRE","adresse":"14 CHEMIN DU SOLEIL LEVANT","cp":"28700","ville":"MAISONS","email":"alexrivetja@gmail.com","tel":"0618437233","visits":[],"actions":[]},{"id":"FRANCHOT-NICOLAS","raisonSociale":"FRANCHOT NICOLAS","adresse":"33 RUE PIERRE MORIN","cp":"69400","ville":"VILLEFRANCHE SUR SAONE","email":"nifranchot@gmail.com","tel":"0682946147","visits":[],"actions":[]},{"id":"PARDIEU","raisonSociale":"PARDIEU","adresse":"12 RUE CARNOT","cp":"94270","ville":"LE KREMLIN BICETRE","email":"marcel_pardieu@hotmail.com","tel":"0677882542","visits":[],"actions":[]},{"id":"STM-SLASSI","raisonSociale":"STM SLASSI","adresse":"6 RUE DES FLEURS","cp":"28630","ville":"MIGNIERES","email":"slassi28@gmail.com","tel":"0781114860","visits":[],"actions":[]},{"id":"VIANA","raisonSociale":"VIANA","adresse":"3 RUE OLYMPE DE GOUGES","cp":"91350","ville":"GRIGNY","email":"info@viana-menuiserie.fr","tel":"0169722964","visits":[],"actions":[]},{"id":"HUMAN-RECORDS","raisonSociale":"HUMAN RECORDS","adresse":"10 RUE PIERRE ET MARIE CURIE","cp":"92310","ville":"SEVRES","email":"fred.juarez@fjcreations.com","tel":"0607238597","visits":[],"actions":[]},{"id":"S-M-A-E","raisonSociale":"S.M.A.E.","adresse":"2 VOIE DU MARQUIS DE NATTES","cp":"91070","ville":"BONDOUFLE","email":"p.foltz@smae.fr","tel":"0603346460","visits":[],"actions":[]},{"id":"CARROLA-LUDOVIC","raisonSociale":"CARROLA LUDOVIC","adresse":"10 RUE LALANDE","cp":"78460","ville":"CHEVREUSE","email":"ludovic.carrola@gmail.com","tel":"0633609632","visits":[],"actions":[]},{"id":"TEISSEDRE-CLAIRE","raisonSociale":"TEISSEDRE CLAIRE","adresse":"HAMEAU DE JAGNY","cp":"78460","ville":"CHEVREUSE","email":"claire.teissedre@yahoo.fr","tel":"0629968183","visits":[],"actions":[]},{"id":"CARVALHO-MANUEL","raisonSociale":"CARVALHO MANUEL","adresse":"4 RUE DES CAPETTES","cp":"91220","ville":"LE PLESSIS PATE","email":"sarlmanuelcarvalho91@gmail.com","tel":"0616429456","visits":[],"actions":[]},{"id":"BATI-FERNANDES","raisonSociale":"BATI FERNANDES","adresse":"4 RUE LEONARD DE VINCI","cp":"78990","ville":"ELANCOURT","email":"batifernandes@orange.fr","tel":"0619396705","visits":[],"actions":[]},{"id":"LLANES-FRAN-OIS","raisonSociale":"LLANES FRANÇOIS","adresse":"1 BIS IMPASSE DES TILLEULS","cp":"28130","ville":"SOULAIRES","email":"llanestf1959@gmail.com","tel":"0679702124","visits":[],"actions":[]},{"id":"CORTOIS-PIERRE-MARIE","raisonSociale":"CORTOIS PIERRE MARIE","adresse":"58 B RUE DE LA HAIE AUX VACHES","cp":"78690","ville":"LES ESSARTS LE ROI","email":"pierremarie.cortois@yahoo.fr","tel":"0638455117","visits":[],"actions":[]},{"id":"AUBERT-JULIEN-ET-BLONDEAU-SABRINA","raisonSociale":"AUBERT JULIEN ET BLONDEAU SABRINA","adresse":"8 RUE DE LA LIBERATION","cp":"28120","ville":"SANDARVILLE","email":"j.aubert372@laposte.net","tel":"0785911116","visits":[],"actions":[]},{"id":"CASTET-MENUISERIE-AGENCEMENT","raisonSociale":"CASTET MENUISERIE AGENCEMENT","adresse":"50 RUE DES ENTREPRENEURS","cp":"91560","ville":"CROSNE","email":"pascalcastet@castetmenuiserie.com","tel":"0160487591","visits":[],"actions":[]},{"id":"JOUAN-CYRIL","raisonSociale":"JOUAN CYRIL","adresse":"3 ALLEE DES CAILLOUX","cp":"78125","ville":"VIEILLE EGLISE YVELINES","email":"cyriljouan@free.fr","tel":"0626460861","visits":[],"actions":[]},{"id":"GUERIN-THIERRY","raisonSociale":"GUERIN THIERRY","adresse":"1 RUE DES ORMES","cp":"28800","ville":"PRE ST EVROULT","email":"thierryguerin93@hotmail.com","tel":"0612680484","visits":[],"actions":[]},{"id":"LFG","raisonSociale":"LFG","adresse":"FERME DES 4 ETOILES","cp":"78610","ville":"AUFFARGIS","email":"jbgalloo@gmail.com","tel":"0620043754","visits":[],"actions":[]},{"id":"PLISSON-TRAVAUX-D-AMENAGEMENT","raisonSociale":"PLISSON TRAVAUX D AMENAGEMENT","adresse":"26 CHEMIN DU BOIS DES NOES","cp":"78113","ville":"GRANDCHAMP","email":"eric.plisson@laposte.net","tel":"0675418278","visits":[],"actions":[]},{"id":"LEPAINTEUR-FLAVIEN","raisonSociale":"LEPAINTEUR FLAVIEN","adresse":"10 RUE DU MARCHAIS","cp":"28700","ville":"DENONVILLE","email":"lepainteur.flavien20@gmail.com","tel":"0602231087","visits":[],"actions":[]},{"id":"LEMAIRE-VIANNEY","raisonSociale":"LEMAIRE VIANNEY","adresse":"16 RUE EMMANUEL CHABRIER","cp":"78120","ville":"RAMBOUILLET","email":"vianneyetcamille@gmail.com","tel":"0607502544","visits":[],"actions":[]},{"id":"LT-ARTISAN","raisonSociale":"LT ARTISAN","adresse":"46 AVENUE DES FRERES LUMIERE","cp":"78190","ville":"TRAPPES","email":"ltartisan@me.com","tel":"0130698903","visits":[],"actions":[]},{"id":"DSA-BATIMENTS","raisonSociale":"DSA BATIMENTS","adresse":"13 ROUTE DE VETHEUIL","cp":"78440","ville":"SAILLY","email":"sarl-dsa@orange.fr","tel":"0603734227","visits":[],"actions":[]},{"id":"RC-EVENTO","raisonSociale":"RC EVENTO","adresse":"7 BIS RUE HELLE NIC","cp":"28700","ville":"AUNEAU","email":"ricardo@rcevento.com","tel":"0686335728","visits":[],"actions":[]},{"id":"PARRE-ANTHONY","raisonSociale":"PARRE ANTHONY","adresse":"8 RUE DE LA VILLENEUVE","cp":"28130","ville":"HOUX","email":"anthony.p@orange.fr","tel":"0638668413","visits":[],"actions":[]},{"id":"P-S-R","raisonSociale":"P S R","adresse":"18 Rue Saint Severin","cp":"28220","ville":"CLOYES LES TROIS RIVIERES","email":"psr93@orange.fr","tel":"0637777532","visits":[],"actions":[]},{"id":"MOREAU","raisonSociale":"MOREAU","adresse":"7 route du parc aux lapins","cp":"78125","ville":"ST HILARION","email":"moreau.tony@gmail.com","tel":"0641585918","visits":[],"actions":[]},{"id":"JEHASSE-AYMERIC","raisonSociale":"JEHASSE AYMERIC","adresse":"17 RUE RODIER","cp":"75009","ville":"PARIS 9EME ARRONDISSEMENT","email":"aymericjehasse@gmail.com","tel":"0698639248","visits":[],"actions":[]},{"id":"BERNARD-EPC","raisonSociale":"BERNARD EPC","adresse":"225 RUE DE L EGLISE","cp":"62690","ville":"CAMBLIGNEUL","email":"bernardepc@gmail.com","tel":"0321559415","visits":[],"actions":[]},{"id":"EMP-DECO","raisonSociale":"EMP DECO","adresse":"5 RUE DU CLOS DE MAROLLES","cp":"28130","ville":"PIERRES","email":"empdeco@gmail.com","tel":"0637474458","visits":[],"actions":[]},{"id":"PLATEFORME-37","raisonSociale":"PLATEFORME 37","adresse":"2 AVENUE CONDORCET","cp":"91240","ville":"SAINT MICHEL SUR ORGE","email":"contact@plateforme37.com","tel":"0677111109","visits":[],"actions":[]},{"id":"SEB-ART-ET-COUVERTURE","raisonSociale":"SEB ART ET COUVERTURE","adresse":"144 RUE DE MAINTENON","cp":"28320","ville":"GALLARDON","email":"sebart8couverture@gmail.com","tel":"0650928385","visits":[],"actions":[]},{"id":"BPM","raisonSociale":"BPM","adresse":"1 RUE DE CHARTRES","cp":"28360","ville":"DAMMARIE","email":"societebpm@gmail.com","tel":"0761491009","visits":[],"actions":[]},{"id":"MAIRE-JEREMY","raisonSociale":"MAIRE JEREMY","adresse":"1 RUE DU GROS PAVE","cp":"28230","ville":"EPERNON","email":"jeremy.maire@free.fr","tel":"0237837780","visits":[],"actions":[]},{"id":"CAOUDAL-NICOLAS","raisonSociale":"CAOUDAL NICOLAS","adresse":"1 RUE BASSE","cp":"28130","ville":"HANCHES","email":"caou69@gmail.com","tel":"0617332833","visits":[],"actions":[]},{"id":"SERPIN-LAURENT","raisonSociale":"SERPIN LAURENT","adresse":"1 RUE DE LA CAVEE","cp":"28320","ville":"GAS","email":"laurentserpin@sfr.fr","tel":"0237909308","visits":[],"actions":[]},{"id":"DUBLE-CHRIS","raisonSociale":"DUBLE CHRIS","adresse":"26 RUE JULES FERRY","cp":"28190","ville":"COURVILLE SUR EURE","email":"duble.chris@yahoo.fr","tel":"0626524674","visits":[],"actions":[]},{"id":"MCO-RENOV","raisonSociale":"MCO RENOV","adresse":"3 RUE JULES GUESDE","cp":"91130","ville":"RIS ORANGIS","email":"mco.renov91@gmail.com","tel":"0625549732","visits":[],"actions":[]},{"id":"ALLEM-ADEL","raisonSociale":"ALLEM ADEL","adresse":"9 RUE MATHURIN REGNIER","cp":"28130","ville":"MAINTENON","email":"allem.adel@gmail.com","tel":"0646126617","visits":[],"actions":[]},{"id":"SIDIBE-ALLAJ","raisonSociale":"SIDIBE ALLAJ","adresse":"32 BOULEVARD J J ROUSSEAU","cp":"92230","ville":"GENNEVILLIERS","email":"sidibeallaj@gmail.com","tel":"0699046812","visits":[],"actions":[]},{"id":"PPA","raisonSociale":"PPA","adresse":"ROUTE DE MAREUIL","cp":"24300","ville":"LUSSAS ET NONTRONNEAU","email":"sarlppa.nadaud@gmail.com","tel":"0553562448","visits":[],"actions":[]},{"id":"VICHE-SYLVAIN","raisonSociale":"VICHE SYLVAIN","adresse":"7 BIS RUE DES BRUYERES","cp":"91640","ville":"VAUGRIGNEUSE","email":"","tel":"0164590451","visits":[],"actions":[]},{"id":"REACONFORT","raisonSociale":"REACONFORT","adresse":"1 BIS RUE DE GALLY","cp":"78450","ville":"CHAVENAY","email":"contact@reaconfort.fr","tel":"0185470118","visits":[],"actions":[]},{"id":"RIGALLEAU-PHILIPPE","raisonSociale":"RIGALLEAU PHILIPPE","adresse":"24 BIS ALFRED MANCEAU","cp":"28230","ville":"EPERNON","email":"philippe.rigalleau@orange.fr","tel":"0615715844","visits":[],"actions":[]},{"id":"OGEC-SAINTE-THERESE","raisonSociale":"OGEC SAINTE THERESE","adresse":"27 rue lachaux","cp":"78120","ville":"RAMBOUILLET","email":"gbizet@ist78.com","tel":"0161086460","visits":[],"actions":[]},{"id":"TEAM-TEX","raisonSociale":"TEAM TEX","adresse":"24 Rés. de la Butte des Bordes","cp":"78120","ville":"SONCHAMP","email":"sciteamtex@gmail.com","tel":"0683382164","visits":[],"actions":[]},{"id":"GRIVE-VINCENT","raisonSociale":"GRIVE VINCENT","adresse":"2 CHEMIN DE MONTGARRIER","cp":"78660","ville":"ST MARTIN DE BRETHENCOURT","email":"vincentgrive@gmail.com","tel":"0688886000","visits":[],"actions":[]},{"id":"GARIN-ERWAN","raisonSociale":"GARIN ERWAN","adresse":"2 ALLEE JOLY MARDELLE","cp":"78610","ville":"AUFFARGIS","email":"erwangar1@gmail.com","tel":"0671944907","visits":[],"actions":[]},{"id":"2-ELB","raisonSociale":"2 ELB","adresse":"12 RUE D AMFREVILLE","cp":"28210","ville":"ST LAURENT LA GATINE","email":"etienne.bacquet123@gmail.com","tel":"0632143933","visits":[],"actions":[]},{"id":"CHAUVEAU-NICOLAS","raisonSociale":"CHAUVEAU NICOLAS","adresse":"10 BIS RUE DU FOSSE BLANC","cp":"28310","ville":"FRESNAY L EVEQUE","email":"nicolas-chauveau5@msn.com","tel":"0677569873","visits":[],"actions":[]},{"id":"CINQUIEME-ELEMENT","raisonSociale":"CINQUIEME ELEMENT","adresse":"2 RUE DU NORD","cp":"28190","ville":"ST ARNOULT DES BOIS","email":"julie@cinquiemeelement.fr","tel":"0684001129","visits":[],"actions":[]},{"id":"BERVILLE-MARC-EMMANUEL","raisonSociale":"BERVILLE MARC EMMANUEL","adresse":"LA MOUCHERE","cp":"61130","ville":"ST CYR LA ROSIERE","email":"marcberville@zoho.eu","tel":"0664321005","visits":[],"actions":[]},{"id":"AUBRY-CEDRIC","raisonSociale":"AUBRY CEDRIC","adresse":"14 AVENUE DE TOURAINE","cp":"28800","ville":"BONNEVAL","email":"mraubrycedric@gmail.com","tel":"0237963389","visits":[],"actions":[]},{"id":"PANTHOU-MENUISERIE","raisonSociale":"PANTHOU MENUISERIE","adresse":"4 RUE DES ROTIS","cp":"78125","ville":"ORCEMONT","email":"panthoumenuiserie@outlook.fr","tel":"0668069606","visits":[],"actions":[]},{"id":"CEDAR-CONSTRUCTION","raisonSociale":"CEDAR CONSTRUCTION","adresse":"12 RUE DE LA JOUANNERIE","cp":"78910","ville":"ORGERUS","email":"contact@cedarconstructionbois.com","tel":"0689560649","visits":[],"actions":[]},{"id":"JEHASSE-AYMERIC-2","raisonSociale":"JEHASSE AYMERIC","adresse":"17 RUE RODIER","cp":"75009","ville":"PARIS","email":"aymericjehasse@gmail.com","tel":"0698639248","visits":[],"actions":[]},{"id":"CETAC-CONSTRUCTION","raisonSociale":"CETAC CONSTRUCTION","adresse":"3 RUE DE LA FERME DE BELLEVILLE","cp":"91190","ville":"GIF SUR YVETTE","email":"contact@cetac-construction.com","tel":"0781272278","visits":[],"actions":[]},{"id":"LNJ","raisonSociale":"LNJ","adresse":"22 RUE SIMON","cp":"94480","ville":"ABLON SUR SEINE","email":"lnjbat@yahoo.fr","tel":"0140026285","visits":[],"actions":[]},{"id":"GMP","raisonSociale":"GMP","adresse":"39 AVENUE D ORLEANS","cp":"91670","ville":"ANGERVILLE","email":"gmpgauthier91@gmail.com","tel":"0620933916","visits":[],"actions":[]},{"id":"RP-BATIMENT","raisonSociale":"RP BATIMENT","adresse":"7 BIS RUE DES JARDINS","cp":"91640","ville":"VAUGRIGNEUSE","email":"rp.batiment@hotmail.com","tel":"0783624486","visits":[],"actions":[]},{"id":"RECHE-YVES-NOEL","raisonSociale":"RECHE YVES NOEL","adresse":"6 RUE DU VAL DE VOISE","cp":"28130","ville":"HOUX","email":"menuiseriegms@gmail.com","tel":"0687893328","visits":[],"actions":[]},{"id":"SOLBAT","raisonSociale":"SOLBAT","adresse":"333 AVENUE DE NEUVILLE","cp":"78950","ville":"GAMBAIS","email":"solbat@orange.fr","tel":"0130460246","visits":[],"actions":[]},{"id":"TESSIER-SERKAN-ER","raisonSociale":"TESSIER / SERKAN ER","adresse":"51 RUE DE LA GUAIZE","cp":"28130","ville":"MAINTENON","email":"","tel":"0675942006","visits":[],"actions":[]},{"id":"BREDY-AGENCEMENT","raisonSociale":"BREDY AGENCEMENT","adresse":"63 RUE ALBERT DHALENNE","cp":"93400","ville":"SAINT OUEN","email":"njaadan@bredy-agencement.fr","tel":"0981789177","visits":[],"actions":[]},{"id":"LES-ATELIERS-DE-GAUTIER","raisonSociale":"LES ATELIERS DE GAUTIER","adresse":"12 RUE DES LAVANDIERES","cp":"78440","ville":"MONTALET LE BOIS","email":"lesateliersdegautier@gmail.com","tel":"0614221941","visits":[],"actions":[]},{"id":"PELTIER-ROMAIN-MELODIE","raisonSociale":"PELTIER ROMAIN MELODIE","adresse":"23 RUE TEXIER GALLAS","cp":"28150","ville":"VOVES","email":"","tel":"0237910578","visits":[],"actions":[]},{"id":"PLANTUREUX-EMMANUEL","raisonSociale":"PLANTUREUX EMMANUEL","adresse":"18 RUE DES GLORIETTES","cp":"28500","ville":"CHERISY","email":"elpe28500@gmail.com","tel":"0662424865","visits":[],"actions":[]},{"id":"HOUVET-THIBAULT","raisonSociale":"HOUVET THIBAULT","adresse":"17 LA VINETTE","cp":"28480","ville":"SANTIGNY","email":"thibault.houvet@orange.fr","tel":"0648097799","visits":[],"actions":[]},{"id":"RUIZ-MATHIAS","raisonSociale":"RUIZ MATHIAS","adresse":"2 RUE DES TILLEULS","cp":"28310","ville":"BAUDREVILLE","email":"mathias_ruiz@hotmail.fr","tel":"0633046780","visits":[],"actions":[]},{"id":"SAINSARD-MACONNERIE-RENOVATION","raisonSociale":"SAINSARD MACONNERIE RENOVATION","adresse":"17 RUE DES MOISSONS","cp":"91670","ville":"ANGERVILLE","email":"stephane.sainsard@yahoo.fr","tel":"0615446687","visits":[],"actions":[]},{"id":"BOISCOUVERT","raisonSociale":"BOISCOUVERT","adresse":"26 RUE DU VIEUX PAVE","cp":"91470","ville":"LIMOURS","email":"boiscouvert@yahoo.fr","tel":"0698051322","visits":[],"actions":[]},{"id":"ATELIER-MADWOOD","raisonSociale":"ATELIER MADWOOD","adresse":"5 RUE DES CHARMILLES","cp":"78460","ville":"CHEVREUSE","email":"lionel.husson@madwood.fr","tel":"0684540144","visits":[],"actions":[]},{"id":"BOUILLON-WILLIAM","raisonSociale":"BOUILLON WILLIAM","adresse":"24 RUE DES SAUSSAIES","cp":"91590","ville":"BAULNE","email":"bouillon.william@outlook.fr","tel":"0689631557","visits":[],"actions":[]},{"id":"LECOQ","raisonSociale":"LECOQ","adresse":"6 ROUTE DE LEVIS SAINT NOM","cp":"78320","ville":"LE MESNIL ST DENIS","email":"contact@entrepriselecoq.fr","tel":"0134618337","visits":[],"actions":[]},{"id":"DECO-TECH","raisonSociale":"DECO TECH","adresse":"6 ROUTE DE LEVIS ST NOM","cp":"78320","ville":"LE MESNIL ST DENIS","email":"contact@decotech78.fr","tel":"0134831624","visits":[],"actions":[]},{"id":"MENUISERIE-VATRINET","raisonSociale":"MENUISERIE VATRINET","adresse":"6 CHEMIN DES 3 CHENES","cp":"91530","ville":"LE VAL ST GERMAIN","email":"menuiserievatrinet@gmail.com","tel":"0649646753","visits":[],"actions":[]},{"id":"PROJET-BAT","raisonSociale":"PROJET BAT","adresse":"8 RUE SAINTE GENEVIEVE","cp":"94400","ville":"VITRY SUR SEINE","email":"yannick.le.gallo@outlook.fr","tel":"0672042486","visits":[],"actions":[]},{"id":"HAMON-CHARPENTE","raisonSociale":"HAMON CHARPENTE","adresse":"14 ROUTE DE VILPERT","cp":"78610","ville":"LES BREVIAIRES","email":"hamon.jerome.chalets@orange.fr","tel":"0134848596","visits":[],"actions":[]},{"id":"LES-ATELIERS-DU-PARC","raisonSociale":"LES ATELIERS DU PARC","adresse":"6  RUE DE LA POELE PERCEE","cp":"28000","ville":"CHARTRES","email":"maisiere@orange.fr","tel":"0685824956","visits":[],"actions":[]},{"id":"BAT-P","raisonSociale":"BAT P","adresse":"21 RUE DE CHARTRES","cp":"28320","ville":"ECROSNES","email":"casabatp@gmail.com","tel":"0646186761","visits":[],"actions":[]},{"id":"COMMUNE-DE-DOURDAN","raisonSociale":"COMMUNE DE DOURDAN","adresse":"ESPLANADE JEAN MOULIN","cp":"91410","ville":"DOURDAN","email":"secretariat-st@dourdan.fr","tel":"0160811414","visits":[],"actions":[]},{"id":"ATELIER-DEBRAB","raisonSociale":"ATELIER DEBRAB","adresse":"LE MESNIL ROLAND","cp":"78125","ville":"ORPHIN","email":"philippedebrabander@gmail.com","tel":"0637185798","visits":[],"actions":[]},{"id":"ATELIER-DEBRAB-2","raisonSociale":"ATELIER DEBRAB","adresse":"LE MESNIL ROLAND","cp":"78125","ville":"ORPHIN","email":"philippedebrabander@gmail.com","tel":"0637185798","visits":[],"actions":[]},{"id":"PALEXX-EBENISTE","raisonSociale":"PALEXX EBENISTE","adresse":"15 RUE DU CLOCHER","cp":"78125","ville":"LA BOISSIERE ECOLE","email":"contact.palexx@gmail.com","tel":"0666668009","visits":[],"actions":[]},{"id":"BELLER-CONSTRUCTIONS-BOIS","raisonSociale":"BELLER CONSTRUCTIONS BOIS","adresse":"17 RUE DES PRESSOIRS","cp":"91580","ville":"VILLECONIN","email":"bellerconstructionsbois@gmail.com","tel":"0645075316","visits":[],"actions":[]},{"id":"PLANET-CHRISTOPHE","raisonSociale":"PLANET CHRISTOPHE","adresse":"9 RUE DES MOISSONS","cp":"91670","ville":"ANGERVILLE","email":"contact@agencement-menuiserieplanet.fr","tel":"0626085220","visits":[],"actions":[]},{"id":"GAUDRON-VALENTIN","raisonSociale":"GAUDRON VALENTIN","adresse":"3 RUE DES 5 SENTIERS","cp":"28120","ville":"MARCHEVILLE","email":"valentin-gaudron@hotmail.fr","tel":"0695328709","visits":[],"actions":[]},{"id":"DE-BOIS-VETU","raisonSociale":"DE BOIS VETU","adresse":"1 ROUTE RAGONANT","cp":"91400","ville":"GOMETZ LA VILLE","email":"laurent.marion@deboisvetu.com","tel":"0668291469","visits":[],"actions":[]},{"id":"PLISSON-ERIC","raisonSociale":"PLISSON ERIC","adresse":"26 CHEMIN DU BOIS DES NOES","cp":"78113","ville":"GRANDCHAMP","email":"eric.plisson@laposte.net","tel":"0675418278","visits":[],"actions":[]},{"id":"MOJ-MENUISERIE","raisonSociale":"MOJ MENUISERIE","adresse":"298 TER ROUTE NATIONALE","cp":"78310","ville":"COIGNIERES","email":"mojmenuiserie@gmail.com","tel":"0623811378","visits":[],"actions":[]},{"id":"CURAN-AXEL","raisonSociale":"CURAN AXEL","adresse":"4 RUE DU DOLMEN","cp":"45480","ville":"ANDONVILLE","email":"curan.axel91@gmail.com","tel":"0762199034","visits":[],"actions":[]},{"id":"LE-PARC","raisonSociale":"LE PARC","adresse":"4 TER ROUTE D ETAMPES","cp":"91150","ville":"LA FORET STE CROIX","email":"scileparc91@gmail.com","tel":"0660084263","visits":[],"actions":[]},{"id":"CONCEPT-VAN-ET-FOURGON","raisonSociale":"CONCEPT VAN ET FOURGON","adresse":"19 RUE D HAUVILLE","cp":"28120","ville":"BAILLEAU LE PIN","email":"administratif@conceptvanetfourgon.fr","tel":"0685873601","visits":[],"actions":[]},{"id":"ARTIBAT-CONCEPT","raisonSociale":"ARTIBAT CONCEPT","adresse":"5 RUE DE LA MAIRIE","cp":"28410","ville":"GOUSSAINVILLE","email":"artibat.concept@gmail.com","tel":"0611292044","visits":[],"actions":[]},{"id":"ARTEMIS","raisonSociale":"ARTEMIS","adresse":"21 ROUTE DES ROCHETTES","cp":"91150","ville":"MORIGNY CHAMPIGNY","email":"contact@artemispartners.fr","tel":"0981721515","visits":[],"actions":[]},{"id":"D-ARCANO-MENUISERIE","raisonSociale":"D ARCANO MENUISERIE","adresse":"27 BIS GRANDE RUE VERTE","cp":"78610","ville":"LE PERRAY EN YVELINES","email":"darcanomenuiserie@gmail.com","tel":"0775726432","visits":[],"actions":[]},{"id":"SINDBERG-OLAF","raisonSociale":"SINDBERG OLAF","adresse":"4 route de la butte à l'Oison","cp":"78125","ville":"POIGNY LA FORET","email":"cameron12545@gmail.com","tel":"0683809178","visits":[],"actions":[]},{"id":"HARAS-DES-VIGNES","raisonSociale":"HARAS DES VIGNES","adresse":"22 RUE DE TESSE","cp":"78910","ville":"TACOIGNIERES","email":"harasdesvignes78@gmail.com; mathieumirande@gmail.com","tel":"0603870656","visits":[],"actions":[]},{"id":"SBCR","raisonSociale":"SBCR","adresse":"25 HAMEAU GUILLERVILLE","cp":"91410","ville":"ST ESCOBILLE","email":"sbcr91@gmail.com","tel":"0659116988","visits":[],"actions":[]},{"id":"LOUMAMA","raisonSociale":"LOUMAMA","adresse":"2 BIS  RUE DE LA FORGE","cp":"28310","ville":"GOMMERVILLE","email":"carofab@orange.fr","tel":"0603733277","visits":[],"actions":[]},{"id":"MIYA","raisonSociale":"MIYA","adresse":"1 RUE DE LA FONTAINE","cp":"28310","ville":"OINVILLE ST LIPHARD","email":"mickaelderoo@orange.fr","tel":"0603073718","visits":[],"actions":[]},{"id":"AMEUBLEMENT-PRADEL","raisonSociale":"AMEUBLEMENT PRADEL","adresse":"348 Rue des prés de la fontaine","cp":"78830","ville":"BULLION","email":"eric@ameublement-pradel.fr","tel":"0695519563","visits":[],"actions":[]},{"id":"AUTHENTIC-CREATION-BOIS","raisonSociale":"AUTHENTIC CREATION BOIS","adresse":"10 rue du poirier","cp":"91740","ville":"CHALOU MOULINEUX","email":"stephane@freschi.fr","tel":"0674574143","visits":[],"actions":[]},{"id":"LE-BRETON-YOHANN","raisonSociale":"LE BRETON YOHANN","adresse":"25 RUE DES PRES FLEURIS","cp":"28210","ville":"NOGENT LE ROI","email":"yoyo-lb@hotmail.fr","tel":"0760577980","visits":[],"actions":[]},{"id":"ASM-MENUISERIE","raisonSociale":"ASM MENUISERIE","adresse":"18 ALLEE ALBERT THOMAS","cp":"91300","ville":"MASSY","email":"menuiserie.asm@gmail.com","tel":"0634384297","visits":[],"actions":[]},{"id":"CHARPENTE-PELTIER-2","raisonSociale":"CHARPENTE PELTIER","adresse":"26 RUE PAUL DESCHANEL","cp":"28150","ville":"LES VILLAGES VOVEENS","email":"peltier@charpente-peltier.fr","tel":"0237990539","visits":[],"actions":[]},{"id":"JAOUEN-RENOVATION","raisonSociale":"JAOUEN RENOVATION","adresse":"21 ROUTE DE LA TOUCHE","cp":"91530","ville":"ST MAURICE MONTCOURONNE","email":"jaouen.renovation@outlook.com","tel":"0686633660","visits":[],"actions":[]},{"id":"BTM-F-BATIMURS-FRANCE","raisonSociale":"BTM F BATIMURS FRANCE","adresse":"59 BIS ROUTE DE BOURAY","cp":"91760","ville":"ITTEVILLE","email":"contact@btm-f.fr","tel":"0164938299","visits":[],"actions":[]},{"id":"ELCIMAI-REALISATIONS","raisonSociale":"ELCIMAI REALISATIONS","adresse":"3 RUE DE LA BRASSERIE GRUBER","cp":"77000","ville":"MELUN","email":"docs.compta@elcimai.com","tel":"0164104720","visits":[],"actions":[]},{"id":"EUROSYNTEC","raisonSociale":"EUROSYNTEC","adresse":"21 RUE DE LA MARINE","cp":"94290","ville":"VILLENEUVE LE ROI","email":"guillaume.cabanis@eurosyntec.fr","tel":"0661616607","visits":[],"actions":[]},{"id":"3-CL","raisonSociale":"3 CL","adresse":"3 CLOS LEONCE SEMAIL","cp":"28630","ville":"FONTENAY SUR EURE","email":"cedricbren28@gmail.com","tel":"0643580024","visits":[],"actions":[]},{"id":"LOTH-MARC","raisonSociale":"LOTH MARC","adresse":"30 rue Poupinel","cp":"78730","ville":"ST ARNOULT EN YVELINES","email":"marc.loth@safrangroup.com","tel":"","visits":[],"actions":[]},{"id":"STAND-N-SHOP","raisonSociale":"STAND N SHOP","adresse":"38 RUE DE GALLARDON","cp":"28130","ville":"YERMENONVILLE","email":"aurelien@standnshop.com","tel":"0650499711","visits":[],"actions":[]},{"id":"AROL-BOIS","raisonSociale":"AROL BOIS","adresse":"35 AVENUE DU PARC","cp":"78220","ville":"VIROFLAY","email":"franck.peillon@arol.ovh","tel":"0672824720","visits":[],"actions":[]},{"id":"BIO-ETAMPES","raisonSociale":"BIO ETAMPES","adresse":"154 ROUTE DE MAROLLES","cp":"78670","ville":"VILLENNES SUR SEINE","email":"bioboulogne@gmail.com","tel":"0761783325","visits":[],"actions":[]},{"id":"ALLIANCE-PROJECT","raisonSociale":"ALLIANCE PROJECT","adresse":"77 RUE DE GARCHES","cp":"92000","ville":"NANTERRE","email":"mathan.wolf@allianceproject.fr","tel":"0141447110","visits":[],"actions":[]},{"id":"MAIRIE-DE-CONDE-SUR-VESGRE","raisonSociale":"MAIRIE DE CONDE SUR VESGRE","adresse":"37 RUE DE LA VESGRE","cp":"78113","ville":"CONDE SUR VESGRE","email":"compta-mairiecondesurvesgre@orange.fr","tel":"0134870430","visits":[],"actions":[]},{"id":"SADORGE-THEO","raisonSociale":"SADORGE THEO","adresse":"1 RUE GERARD TREMBLAY","cp":"28800","ville":"PRE ST EVROULT","email":"sadorge.theo@wanadoo.fr","tel":"0603321209","visits":[],"actions":[]},{"id":"DUDEMAINE","raisonSociale":"DUDEMAINE","adresse":"36 ROUTE DE LA FALAISE","cp":"78126","ville":"AULNAY SUR MAULDRE","email":"eurldudemaine.01@gmail.com","tel":"0630808586","visits":[],"actions":[]},{"id":"PLAINE-DE-BEAUCE","raisonSociale":"PLAINE DE BEAUCE","adresse":"21 RUE DU CALVAIRE","cp":"92210","ville":"ST CLOUD","email":"plainedebeauce@gmail.com","tel":"0237904646","visits":[],"actions":[]}];
+
+/* ===================== CONSTANTES ===================== */
+const STORAGE_KEY = 'houdard_suivi_visites_v1';
+const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const JOURS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const RECENT_THRESHOLD_DAYS = 60;
+
+/* ===================== STOCKAGE : synchronisation multi-appareils via le compte Claude (window.storage) + secours localStorage ===================== */
+function hasArtifactStorage(){ return typeof window.storage !== 'undefined' && window.storage; }
+
+function localGet(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(!parsed.clients) parsed.clients = {};
+    if(!parsed.actions) parsed.actions = [];
+    if(!parsed.deletedClients) parsed.deletedClients = [];
+    return parsed;
+  }catch(e){ console.error('Erreur lecture stockage local', e); return null; }
+}
+function localSet(store){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }catch(e){ console.error('Erreur écriture stockage local', e); }
+}
+
+/* ---- Synchronisation cloud Firebase (optionnelle, priorité la plus haute quand configurée + connectée) ---- */
+let firebaseApp = null, firebaseUser = null, firestoreUnsub = null;
+function getFirebaseConfig(){
+  try{ const raw = localStorage.getItem('firebase_config_v1'); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function saveFirebaseConfig(cfg){ localStorage.setItem('firebase_config_v1', JSON.stringify(cfg)); }
+
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    if(document.querySelector(`script[src="${src}"]`)){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error('Échec de chargement: ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function ensureFirebaseSdk(){
+  if(window.firebase) return;
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-app-compat.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-auth-compat.min.js');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.1/firebase-firestore-compat.min.js');
+}
+
+function normalizeParsedStore(parsed){
+  if(!parsed.clients) parsed.clients = {};
+  if(!parsed.actions) parsed.actions = [];
+  if(!parsed.deletedClients) parsed.deletedClients = [];
+  return parsed;
+}
+
+function attachFirestoreListener(uid){
+  if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
+  const ref = firebase.firestore().collection('users').doc(uid).collection('data').doc('main');
+  firestoreUnsub = ref.onSnapshot(snap => {
+    if(snap.exists && !snap.metadata.hasPendingWrites){
+      const data = snap.data();
+      if(data && data.payload){
+        try{
+          STORE = normalizeParsedStore(JSON.parse(data.payload));
+          localSet(STORE);
+          renderAll();
+        }catch(e){ console.error('Payload Firestore invalide', e); }
+      }
+    } else if(!snap.exists){
+      // Rien encore côté cloud pour ce compte : on y pousse les données déjà présentes sur cet appareil.
+      ref.set({payload: JSON.stringify(STORE), updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    }
+    updateSyncStatusUI();
+  }, err => { console.error('Erreur Firestore', err); updateSyncStatusUI(); });
+}
+
+async function pushToFirestore(store){
+  if(!firebaseUser) return false;
+  try{
+    const ref = firebase.firestore().collection('users').doc(firebaseUser.uid).collection('data').doc('main');
+    await ref.set({payload: JSON.stringify(store), updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    return true;
+  }catch(e){ console.error('Erreur écriture Firestore', e); return false; }
+}
+
+async function initFirebaseFromStoredConfig(){
+  const cfg = getFirebaseConfig();
+  if(!cfg) return;
+  try{
+    await ensureFirebaseSdk();
+    if(!firebaseApp) firebaseApp = firebase.initializeApp(cfg);
+    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    firebase.auth().onAuthStateChanged(user => {
+      firebaseUser = user;
+      if(user) attachFirestoreListener(user.uid);
+      else if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
+      updateSyncStatusUI();
+    });
+  }catch(e){ console.error('Erreur initialisation Firebase', e); }
+}
+
+function updateSyncStatusUI(){
+  const statusEl = document.getElementById('fbStatus');
+  const logoutBtn = document.getElementById('btnFbLogout');
+  if(statusEl){
+    if(firebaseUser){
+      statusEl.textContent = 'Connecté en tant que ' + firebaseUser.email + '. Synchronisation cloud active en temps réel.';
+      if(logoutBtn) logoutBtn.style.display = 'inline-block';
+    } else if(getFirebaseConfig()){
+      statusEl.textContent = "Configuration enregistrée, mais non connecté. Connectez-vous ci-dessus.";
+      if(logoutBtn) logoutBtn.style.display = 'none';
+    } else {
+      statusEl.textContent = "Aucune synchronisation cloud configurée. L'outil utilise le compte Claude (si disponible) ou le stockage local.";
+      if(logoutBtn) logoutBtn.style.display = 'none';
+    }
+  }
+  refreshHeaderSyncNote();
+}
+function refreshHeaderSyncNote(){
+  const el = document.getElementById('headerSub');
+  if(!el) return;
+  const syncNote = firebaseUser
+    ? ' — 🔥 Synchronisé en temps réel (cloud)'
+    : hasArtifactStorage()
+      ? ' — Synchronisé via votre compte Claude'
+      : ' — Données stockées uniquement sur cet appareil';
+  el.textContent = BASE_CLIENTS.length + ' clients — Secteurs 91 / 78 / 28' + syncNote;
+}
+
+async function loadStore(){
+  const localData = localGet();
+  if(hasArtifactStorage()){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        const parsed = normalizeParsedStore(JSON.parse(res.value));
+        localSet(parsed); // met à jour le cache local de cet appareil
+        return {store: parsed, source: 'remote'};
+      }
+    }catch(e){ /* clé absente côté compte, ou stockage indisponible — on retombe sur le cache local */ }
+  }
+  return {store: localData || {clients:{}, actions:[], deletedClients:[]}, source: localData ? 'local' : 'empty'};
+}
+async function saveStore(store){
+  localSet(store); // toujours conservé sur cet appareil, même hors ligne
+  if(firebaseUser){
+    const ok = await pushToFirestore(store);
+    if(ok) return true;
+  }
+  if(hasArtifactStorage()){
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(store), false); return true; }
+    catch(e){ console.error('Erreur synchronisation compte Claude (données conservées localement)', e); return false; }
+  }
+  return true;
+}
+let STORE = {clients:{}, actions:[], deletedClients:[]};
+
+function isStoreEmpty(store){ return Object.keys(store.clients||{}).length===0 && (store.actions||[]).length===0; }
+
+function uid(){ return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8); }
+
+/* ===================== FUSION DONNEES ===================== */
+function isDeleted(id){ return (STORE.deletedClients||[]).includes(id); }
+function getClients(opts){
+  const includeDeleted = opts && opts.includeDeleted;
+  let list = BASE_CLIENTS.map(base => {
+    const dyn = STORE.clients[base.id] || {visits:[]};
+    return Object.assign({}, base, {visits: dyn.visits || []});
+  });
+  if(!includeDeleted) list = list.filter(c => !isDeleted(c.id));
+  return list;
+}
+function getClientById(id){ return getClients({includeDeleted:true}).find(c => c.id === id); }
+
+function ensureClientEntry(id){
+  if(!STORE.clients[id]) STORE.clients[id] = {visits:[]};
+  return STORE.clients[id];
+}
+
+function deleteClient(id){
+  const client = getClientById(id);
+  showAppConfirm(`Supprimer "${client ? client.raisonSociale : id}" de la liste active ? Son historique de visites et actions sera conservé, et vous pourrez le restaurer à tout moment via le filtre "Supprimés".`, () => {
+    STORE.deletedClients = STORE.deletedClients || [];
+    if(!STORE.deletedClients.includes(id)) STORE.deletedClients.push(id);
+    saveStore(STORE);
+    closeModal('modalFiche');
+    renderAll();
+  });
+}
+function restoreClient(id){
+  STORE.deletedClients = (STORE.deletedClients||[]).filter(x => x !== id);
+  saveStore(STORE);
+  renderAll();
+  openFiche(id);
+}
+
+/* ===================== UTILITAIRES DATE ===================== */
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function parseISO(d){ const [y,m,day] = d.split('-').map(Number); return new Date(y, m-1, day); }
+function daysBetween(d1, d2){ return Math.floor((d2 - d1) / 86400000); }
+function fmtDateFR(iso){ if(!iso) return ''; const d = parseISO(iso); return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear(); }
+function fmtDateShort(iso){ const d = parseISO(iso); return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0'); }
+
+function lastVisitDate(client){
+  if(!client.visits || client.visits.length===0) return null;
+  return client.visits.reduce((max,v) => v.date > max ? v.date : max, client.visits[0].date);
+}
+function clientStatus(client){
+  const last = lastVisitDate(client);
+  if(!last) return 'jamais';
+  const days = daysBetween(parseISO(last), new Date());
+  return days <= RECENT_THRESHOLD_DAYS ? 'recent' : 'revisiter';
+}
+
+/* ===================== NORMALISATION / RECHERCHE FLOUE ===================== */
+function normalize(str){
+  return (str||'').toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^A-Z0-9 ]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+function levenshtein(a,b){
+  const m=a.length,n=b.length;
+  if(m===0) return n; if(n===0) return m;
+  const dp = Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function similarity(a,b){
+  const na = normalize(a), nb = normalize(b);
+  if(!na || !nb) return 0;
+  if(na === nb) return 1;
+  const dist = levenshtein(na, nb);
+  const base = 1 - dist / Math.max(na.length, nb.length);
+  const tokensA = new Set(na.split(' ')), tokensB = new Set(nb.split(' '));
+  let overlap = 0;
+  tokensA.forEach(t => { if(tokensB.has(t) && t.length>1) overlap++; });
+  const tokenBonus = overlap / Math.max(tokensA.size, tokensB.size);
+  if(na.includes(nb) || nb.includes(na)) return Math.max(base, 0.9);
+  return base*0.5 + tokenBonus*0.5;
+}
+function findClientMatches(name, limit){
+  const scored = getClients().map(c => ({client:c, score: similarity(name, c.raisonSociale)}));
+  scored.sort((a,b)=> b.score - a.score);
+  return scored.slice(0, limit||5);
+}
+function searchClients(query){
+  const nq = normalize(query);
+  if(!nq) return [];
+  return getClients().filter(c => normalize(c.raisonSociale).includes(nq) || normalize(c.ville).includes(nq) || (c.cp||'').includes(query)).slice(0,30);
+}
+
+/* ===================== DASHBOARD ===================== */
+function renderDashboard(){
+  const clients = getClients();
+  const now = new Date();
+  const total = clients.length;
+  let recent=0, revisiter=0, jamais=0;
+  clients.forEach(c => { const s = clientStatus(c); if(s==='recent') recent++; else if(s==='revisiter') revisiter++; else jamais++; });
+
+  let visitsThisYear=0, visitsThisMonth=0, visitsLastMonth=0;
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  clients.forEach(c => c.visits.forEach(v => {
+    const d = parseISO(v.date);
+    if(d.getFullYear()===now.getFullYear()) visitsThisYear++;
+    if(d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth()) visitsThisMonth++;
+    if(d.getFullYear()===lastMonthDate.getFullYear() && d.getMonth()===lastMonthDate.getMonth()) visitsLastMonth++;
+  }));
+
+  const actions = STORE.actions || [];
+  const actionsTodo = actions.filter(a=>a.statut!=='Terminé').length;
+  const late = actions.filter(a => a.statut!=='Terminé' && a.dateRecommandee && a.dateRecommandee < todayISO()).length;
+  const weekEnd = new Date(now); weekEnd.setDate(now.getDate()+7);
+  const thisWeek = actions.filter(a => a.statut!=='Terminé' && a.dateRecommandee && parseISO(a.dateRecommandee) >= now && parseISO(a.dateRecommandee) <= weekEnd).length;
+
+  const cards = [
+    {num: total, lbl:'Clients au total', cls:''},
+    {num: recent, lbl:'Visités < 2 mois', cls:'green'},
+    {num: revisiter, lbl:'À revisiter', cls:'red'},
+    {num: jamais, lbl:'Jamais visités', cls:'grey'},
+    {num: visitsThisYear, lbl:'Visites cette année', cls:''},
+    {num: visitsThisMonth, lbl:'Visites ce mois', cls:''},
+    {num: visitsLastMonth, lbl:'Visites mois précédent', cls:''},
+    {num: actionsTodo, lbl:'Actions à réaliser', cls:'amber'},
+    {num: late, lbl:'Relances en retard', cls:'red'},
+    {num: thisWeek, lbl:'Actions cette semaine', cls:'amber'},
+    {num: (STORE.deletedClients||[]).length, lbl:'Clients supprimés', cls:'grey'},
+  ];
+  document.getElementById('dashboard').innerHTML = cards.map(c =>
+    `<div class="card ${c.cls}"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`
+  ).join('');
+}
+
+/* ===================== ETAT UI ===================== */
+let UI = {
+  view: 'annual',
+  year: new Date().getFullYear(),
+  filter: 'tous',
+  search: '',
+  calMonth: new Date().getMonth(),
+  calYear: new Date().getFullYear(),
+};
+
+function populateYearSelect(){
+  const sel = document.getElementById('yearSelect');
+  const years = new Set([new Date().getFullYear()]);
+  getClients().forEach(c => c.visits.forEach(v => years.add(parseISO(v.date).getFullYear())));
+  const sorted = Array.from(years).sort((a,b)=>b-a);
+  sel.innerHTML = sorted.map(y => `<option value="${y}" ${y===UI.year?'selected':''}>${y}</option>`).join('');
+}
+
+function filteredClients(){
+  let list = UI.filter === 'supprimes' ? getClients({includeDeleted:true}).filter(c => isDeleted(c.id)) : getClients();
+  const now = new Date();
+  if(UI.search){
+    const nq = normalize(UI.search);
+    list = list.filter(c => normalize(c.raisonSociale).includes(nq) || normalize(c.ville).includes(nq) || (c.cp||'').includes(UI.search));
+  }
+  if(UI.filter==='recent') list = list.filter(c => clientStatus(c)==='recent');
+  else if(UI.filter==='revisiter') list = list.filter(c => clientStatus(c)==='revisiter');
+  else if(UI.filter==='jamais') list = list.filter(c => clientStatus(c)==='jamais');
+  else if(UI.filter==='moisEnCours') list = list.filter(c => c.visits.some(v=>{const d=parseISO(v.date); return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth();}));
+  else if(UI.filter==='anneeEnCours') list = list.filter(c => c.visits.some(v=> parseISO(v.date).getFullYear()===now.getFullYear()));
+  return list;
+}
+
+/* ===================== TABLEAU ANNUEL ===================== */
+function renderAnnualTable(){
+  const list = filteredClients();
+  const table = document.getElementById('annualTable');
+  let thead = '<thead><tr><th class="client-col">Client</th>' + MOIS_FR.map(m=>`<th>${m}</th>`).join('') + '</tr></thead>';
+  let rows = list.map(c => {
+    const deleted = isDeleted(c.id);
+    const status = clientStatus(c);
+    const rowClass = deleted ? 'row-grey row-deleted' : status==='recent' ? 'row-green' : status==='revisiter' ? 'row-red' : 'row-grey';
+    const dotClass = status==='recent' ? 'dot-green' : status==='revisiter' ? 'dot-red' : 'dot-grey';
+    const cells = MOIS_FR.map((m, idx) => {
+      const visitsInMonth = c.visits.filter(v => { const d = parseISO(v.date); return d.getFullYear()===UI.year && d.getMonth()===idx; });
+      if(visitsInMonth.length===0) return '<td></td>';
+      const chips = visitsInMonth.sort((a,b)=>a.date.localeCompare(b.date)).map(v =>
+        `<span class="date-chip ${v.incertain?'uncertain':''}" data-visit="${v.id}" data-client="${c.id}">${fmtDateShort(v.date)}</span>`
+      ).join('');
+      return `<td>${chips}</td>`;
+    }).join('');
+    const marker = deleted ? '<span class="badge badge-todo" style="margin-right:6px;">Supprimé</span>' : `<span class="status-dot ${dotClass}"></span>`;
+    return `<tr class="${rowClass}">
+      <td class="client-col" data-client="${c.id}">${marker}${escapeHtml(c.raisonSociale)}<div class="sub-city">${escapeHtml(c.ville||'')}</div></td>
+      ${cells}
+    </tr>`;
+  }).join('');
+  if(list.length===0) rows = `<tr><td colspan="13"><div class="empty-state">Aucun client ne correspond à ce filtre.</div></td></tr>`;
+  table.innerHTML = thead + '<tbody>' + rows + '</tbody>';
+
+  table.querySelectorAll('td.client-col').forEach(td => td.addEventListener('click', () => openFiche(td.dataset.client)));
+  table.querySelectorAll('.date-chip').forEach(chip => {
+    chip.addEventListener('mouseenter', (e) => showTooltip(e, chip.dataset.client, chip.dataset.visit));
+    chip.addEventListener('mouseleave', hideTooltip);
+    chip.addEventListener('click', () => openFiche(chip.dataset.client));
+  });
+}
+
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+/* ===================== TOOLTIP ===================== */
+function showTooltip(evt, clientId, visitId){
+  const client = getClientById(clientId);
+  const visit = client.visits.find(v=>v.id===visitId);
+  if(!visit) return;
+  const tt = document.getElementById('tooltip');
+  const prioClass = visit.priorite ? 'prio-'+visit.priorite.toLowerCase() : '';
+  let html = `<h4>${escapeHtml(client.raisonSociale)} — ${fmtDateFR(visit.date)}</h4>`;
+  if(visit.interlocuteur) html += `<div><span class="tt-label">Interlocuteur : </span>${escapeHtml(visit.interlocuteur)}</div>`;
+  html += `<div class="tt-section"><span class="tt-label">Compte rendu</span><div>${escapeHtml(visit.compteRendu||'(non renseigné)')}</div></div>`;
+  const analysisRows = [
+    ['Besoins identifiés', visit.besoins], ['Produits évoqués', visit.produits],
+    ['Devis à prévoir', visit.devis], ['Opportunités', visit.opportunites],
+    ['Problèmes', visit.problemes], ['Action à réaliser', visit.action],
+  ];
+  const nonEmpty = analysisRows.filter(([,v]) => v);
+  if(nonEmpty.length || visit.recommandation || visit.priorite){
+    html += '<div class="tt-section"><span class="tt-label">Analyse / recommandations</span>';
+    nonEmpty.forEach(([label,val]) => html += `<div style="margin-top:4px;"><b>${label} :</b> ${escapeHtml(val)}</div>`);
+    if(visit.dateRelance) html += `<div style="margin-top:4px;"><b>Relance recommandée :</b> ${fmtDateFR(visit.dateRelance)}</div>`;
+    if(visit.priorite) html += `<div style="margin-top:4px;"><b>Priorité :</b> <span class="${prioClass}">${visit.priorite}</span></div>`;
+    if(visit.recommandation) html += `<div style="margin-top:4px;"><b>Recommandation :</b> ${escapeHtml(visit.recommandation)}</div>`;
+    html += '</div>';
+  }
+  if(visit.incertain) html += `<div class="uncertain-flag">Information incertaine – vérification nécessaire.</div>`;
+  tt.innerHTML = html;
+  tt.style.display = 'block';
+  positionTooltip(evt);
+}
+function positionTooltip(evt){
+  const tt = document.getElementById('tooltip');
+  const pad = 14;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  const rect = tt.getBoundingClientRect();
+  if(x + rect.width > window.innerWidth) x = evt.clientX - rect.width - pad;
+  if(y + rect.height > window.innerHeight) y = evt.clientY - rect.height - pad;
+  tt.style.left = x+'px'; tt.style.top = y+'px';
+}
+function hideTooltip(){ document.getElementById('tooltip').style.display='none'; }
+
+/* ===================== VUE CALENDRIER MENSUEL ===================== */
+function renderMonthCalendar(){
+  document.getElementById('monthLabel').textContent = MOIS_FR[UI.calMonth] + ' ' + UI.calYear;
+  const grid = document.getElementById('monthGrid');
+  let html = JOURS_FR.map(j=>`<div class="dow">${j}</div>`).join('');
+  const first = new Date(UI.calYear, UI.calMonth, 1);
+  let startDow = (first.getDay()+6)%7; // lundi=0
+  const daysInMonth = new Date(UI.calYear, UI.calMonth+1, 0).getDate();
+  for(let i=0;i<startDow;i++) html += '<div></div>';
+  const clients = getClients();
+  for(let day=1; day<=daysInMonth; day++){
+    const iso = UI.calYear+'-'+String(UI.calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const visitsToday = [];
+    clients.forEach(c => c.visits.forEach(v => { if(v.date===iso) visitsToday.push({c,v}); }));
+    let cellHtml = `<div class="dnum">${day}</div>`;
+    visitsToday.forEach(({c,v}) => cellHtml += `<span class="vlink" data-client="${c.id}" data-visit="${v.id}">${escapeHtml(c.raisonSociale)}</span>`);
+    html += `<div class="month-cell">${cellHtml}</div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.vlink').forEach(el => {
+    el.addEventListener('mouseenter', (e)=>showTooltip(e, el.dataset.client, el.dataset.visit));
+    el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('click', ()=>openFiche(el.dataset.client));
+  });
+}
+
+/* ===================== FICHE CLIENT ===================== */
+function openFiche(clientId){
+  const c = getClientById(clientId);
+  if(!c) return;
+  document.getElementById('ficheTitle').textContent = c.raisonSociale;
+  const status = clientStatus(c);
+  const statusLabel = status==='recent' ? '🟢 Visite récente' : status==='revisiter' ? '🔴 Visite à prévoir' : '⚪ Jamais visité';
+  const last = lastVisitDate(c);
+  const nbVisitsYear = c.visits.filter(v=>parseISO(v.date).getFullYear()===new Date().getFullYear()).length;
+  const clientActions = (STORE.actions||[]).filter(a=>a.clientId===clientId);
+  const deleted = isDeleted(clientId);
+
+  let html = '';
+  if(deleted){
+    html += `<div class="uncertain-flag" style="background:var(--grey-bg);border-color:var(--grey);color:var(--text-mut);">
+      Ce client a été supprimé de la liste active. Son historique est conservé.
+      <button class="btn btn-sm btn-navy" style="margin-left:8px;" onclick="restoreClient('${c.id}')">Restaurer ce client</button>
+    </div>`;
+  }
+  html += `<div class="fiche-grid">
+    <div><span class="k">Adresse</span>${escapeHtml(c.adresse||'—')}</div>
+    <div><span class="k">Code postal / Ville</span>${escapeHtml(c.cp||'')} ${escapeHtml(c.ville||'')}</div>
+    <div><span class="k">Téléphone</span>${c.tel? '<a href="tel:'+c.tel+'">'+c.tel+'</a>' : '—'}</div>
+    <div><span class="k">Email</span>${c.email? '<a href="mailto:'+c.email+'">'+c.email+'</a>' : '—'}</div>
+    <div><span class="k">Statut</span>${statusLabel}</div>
+    <div><span class="k">Dernière visite</span>${last? fmtDateFR(last) : '—'}</div>
+    <div><span class="k">Visites cette année</span>${nbVisitsYear}</div>
+    <div><span class="k">Total visites</span>${c.visits.length}</div>
+  </div>`;
+
+  html += '<div class="section-title" style="margin-top:0;">Historique des visites</div>';
+  if(c.visits.length===0){
+    html += '<div class="empty-state">Aucune visite enregistrée pour ce client.</div>';
+  } else {
+    const sorted = [...c.visits].sort((a,b)=> b.date.localeCompare(a.date));
+    html += sorted.map(v => {
+      const prioBadge = v.priorite ? ` &middot; Priorité: <b>${v.priorite}</b>` : '';
+      return `<div class="history-item">
+        <div class="hdate">${fmtDateFR(v.date)}${v.interlocuteur? ' — '+escapeHtml(v.interlocuteur):''}${prioBadge}</div>
+        <div class="htxt">${escapeHtml(v.compteRendu||'')}</div>
+        ${v.recommandation? '<div class="htxt" style="margin-top:6px;"><b>Recommandation :</b> '+escapeHtml(v.recommandation)+'</div>':''}
+        ${v.dateRelance? '<div class="htxt"><b>Relance recommandée :</b> '+fmtDateFR(v.dateRelance)+'</div>':''}
+        ${v.incertain? '<div class="uncertain-flag">Information incertaine – vérification nécessaire.</div>':''}
+        <button class="btn btn-sm" style="margin-top:6px;" onclick="deleteVisit('${c.id}','${v.id}')">Supprimer cette visite</button>
+      </div>`;
+    }).join('');
+  }
+
+  html += '<div class="section-title">Actions liées</div>';
+  if(clientActions.length===0){
+    html += '<div class="empty-state">Aucune action en cours.</div>';
+  } else {
+    html += clientActions.map(a => {
+      const badgeCls = a.statut==='Terminé'?'badge-done':a.statut==='En cours'?'badge-progress':'badge-todo';
+      return `<div class="history-item"><b>${escapeHtml(a.action)}</b> <span class="badge ${badgeCls}">${a.statut}</span>
+        <div class="htxt">Recommandée pour le ${a.dateRecommandee? fmtDateFR(a.dateRecommandee):'—'}</div></div>`;
+    }).join('');
+  }
+
+  if(!deleted){
+    html += `<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);text-align:right;">
+      <button class="btn btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteClient('${c.id}')">🗑 Supprimer ce client</button>
+    </div>`;
+  }
+
+  document.getElementById('ficheBody').innerHTML = html;
+  openModal('modalFiche');
+}
+function deleteVisit(clientId, visitId){
+  showAppConfirm('Supprimer définitivement cette visite ?', () => {
+    const entry = ensureClientEntry(clientId);
+    entry.visits = entry.visits.filter(v => v.id !== visitId);
+    saveStore(STORE);
+    renderAll();
+    openFiche(clientId);
+  });
+}
+
+/* ===================== MODALES : OUVERTURE / FERMETURE ===================== */
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', (e) => {
+  closeModal(e.target.closest('.modal-overlay').id);
+}));
+document.querySelectorAll('.modal-overlay').forEach(ov => ov.addEventListener('click', (e) => { if(e.target===ov) closeModal(ov.id); }));
+
+/* ===================== BOITES DE DIALOGUE INTERNES ===================== */
+/* Remplace alert()/confirm() natifs : bloqués (silencieusement) dans certains environnements sandboxés (iframe d'artifact, certaines webviews mobiles). */
+function showAppAlert(msg, title){
+  document.getElementById('appMsgTitle').textContent = title || 'Information';
+  document.getElementById('appMsgText').textContent = msg;
+  const footer = document.getElementById('appMsgFooter');
+  footer.innerHTML = '<button class="btn btn-primary" id="appMsgOk">OK</button>';
+  document.getElementById('appMsgOk').addEventListener('click', () => closeModal('modalAppMsg'));
+  openModal('modalAppMsg');
+}
+function showAppConfirm(msg, onYes, title){
+  document.getElementById('appMsgTitle').textContent = title || 'Confirmation';
+  document.getElementById('appMsgText').textContent = msg;
+  const footer = document.getElementById('appMsgFooter');
+  footer.innerHTML = '<button class="btn" id="appMsgCancel">Annuler</button><button class="btn btn-primary" id="appMsgYes">Confirmer</button>';
+  document.getElementById('appMsgCancel').addEventListener('click', () => closeModal('modalAppMsg'));
+  document.getElementById('appMsgYes').addEventListener('click', () => { closeModal('modalAppMsg'); onYes(); });
+  openModal('modalAppMsg');
+}
+
+/* ===================== NOUVELLE VISITE MANUELLE ===================== */
+let selectedPriority = null;
+function resetVisitModal(){
+  document.getElementById('visitClientSearch').value='';
+  document.getElementById('visitClientResults').innerHTML='';
+  document.getElementById('visitClientId').value='';
+  document.getElementById('visitClientChosen').textContent='';
+  document.getElementById('visitDate').value = todayISO();
+  document.getElementById('visitInterlocuteur').value='';
+  document.getElementById('visitCompteRendu').value='';
+  document.getElementById('crReformuleHint').style.display='none';
+  document.getElementById('analyzeTextStatus').textContent='';
+  document.getElementById('analysisFields').style.display='none';
+  ['fBesoins','fProduits','fDevis','fOpportunites','fProblemes','fAction','fRecommandation'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDateRelance').value='';
+  selectedPriority = null;
+  document.querySelectorAll('#modalVisit .priority-opt').forEach(o=>o.classList.remove('sel'));
+}
+document.getElementById('btnNewVisitManual').addEventListener('click', () => { resetVisitModal(); openModal('modalVisit'); });
+
+document.getElementById('visitClientSearch').addEventListener('input', (e) => {
+  const results = searchClients(e.target.value);
+  document.getElementById('visitClientResults').innerHTML = results.map(c =>
+    `<div class="candidate-item" data-id="${c.id}">${escapeHtml(c.raisonSociale)} <span class="hint">(${escapeHtml(c.ville||'')})</span></div>`
+  ).join('');
+  document.querySelectorAll('#visitClientResults .candidate-item').forEach(el => el.addEventListener('click', () => {
+    document.getElementById('visitClientId').value = el.dataset.id;
+    document.getElementById('visitClientChosen').textContent = 'Client sélectionné : ' + getClientById(el.dataset.id).raisonSociale;
+    document.getElementById('visitClientResults').innerHTML='';
+    document.getElementById('visitClientSearch').value='';
+  }));
+});
+
+document.querySelectorAll('#modalVisit .priority-opt').forEach(opt => opt.addEventListener('click', () => {
+  document.querySelectorAll('#modalVisit .priority-opt').forEach(o=>o.classList.remove('sel'));
+  opt.classList.add('sel');
+  selectedPriority = opt.dataset.prio;
+}));
+
+document.getElementById('visitCompteRendu').addEventListener('input', () => { document.getElementById('crReformuleHint').style.display='none'; });
+document.getElementById('btnAnalyzeText').addEventListener('click', async () => {
+  const text = document.getElementById('visitCompteRendu').value.trim();
+  if(!text){ showAppAlert('Veuillez saisir un compte rendu à analyser.'); return; }
+  const statusEl = document.getElementById('analyzeTextStatus');
+  statusEl.innerHTML = '<span class="spinner"></span>Analyse en cours...';
+  try{
+    const clientName = document.getElementById('visitClientId').value ? getClientById(document.getElementById('visitClientId').value).raisonSociale : '(non précisé)';
+    const result = await analyzeReportText(text, clientName);
+    fillAnalysisFields(result);
+    statusEl.textContent = 'Analyse terminée.';
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = "Échec de l'analyse IA (" + err.message + "). Vous pouvez remplir les champs manuellement ci-dessous.";
+    document.getElementById('analysisFields').style.display='block';
+  }
+});
+
+function fillAnalysisFields(r){
+  document.getElementById('analysisFields').style.display='block';
+  if(r.compteRenduReformule){
+    document.getElementById('visitCompteRendu').value = r.compteRenduReformule;
+    document.getElementById('crReformuleHint').style.display = 'inline';
+  }
+  document.getElementById('fBesoins').value = r.besoins||'';
+  document.getElementById('fProduits').value = r.produits||'';
+  document.getElementById('fDevis').value = r.devis||'';
+  document.getElementById('fOpportunites').value = r.opportunites||'';
+  document.getElementById('fProblemes').value = r.problemes||'';
+  document.getElementById('fAction').value = r.action||'';
+  document.getElementById('fRecommandation').value = r.recommandation||'';
+  document.getElementById('fDateRelance').value = r.dateRelance||'';
+  if(r.interlocuteur && !document.getElementById('visitInterlocuteur').value) document.getElementById('visitInterlocuteur').value = r.interlocuteur;
+  if(r.priorite){
+    selectedPriority = r.priorite;
+    document.querySelectorAll('#modalVisit .priority-opt').forEach(o=>o.classList.toggle('sel', o.dataset.prio===r.priorite));
+  }
+}
+
+async function callClaude(messages, system){
+  const resp = await fetch(ANTHROPIC_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ model: ANTHROPIC_MODEL, max_tokens: 1200, system: system, messages: messages })
+  });
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  const data = await resp.json();
+  const textBlock = (data.content||[]).find(b=>b.type==='text');
+  if(!textBlock) throw new Error('Réponse vide');
+  let clean = textBlock.text.trim().replace(/^```json/,'').replace(/^```/,'').replace(/```$/,'').trim();
+  return JSON.parse(clean);
+}
+
+async function analyzeReportText(text, clientName){
+  const system = `Tu es un assistant commercial pour un technico-commercial en négoce de matériaux bois/panneaux (Houdard).
+Aujourd'hui nous sommes le ${todayISO()} (format AAAA-MM-JJ).
+Analyse le compte rendu de visite client fourni et réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
+{"compteRenduReformule":"", "interlocuteur":"", "besoins":"", "produits":"", "devis":"", "opportunites":"", "problemes":"", "action":"", "dateRelance":"AAAA-MM-JJ ou vide", "priorite":"Haute|Moyenne|Faible", "recommandation":""}
+Pour "compteRenduReformule" : corrige l'orthographe et la grammaire du compte rendu saisi, et reformule-le dans un style clair et professionnel, sans changer le sens, sans supprimer d'information, et sans jamais ajouter un fait, un chiffre ou un détail qui n'est pas présent dans le texte d'origine.
+Pour les autres champs : n'invente aucune information absente du texte. Laisse une valeur vide ("") si l'information n'est pas mentionnée. La dateRelance doit être calculée à partir d'aujourd'hui si une durée relative est mentionnée (ex: "sous 10 jours").`;
+  const messages = [{role:'user', content: `Client : ${clientName}\nCompte rendu :\n${text}`}];
+  return await callClaude(messages, system);
+}
+
+function tryAutoSelectFromSearch(searchInputId, hiddenInputId){
+  const val = document.getElementById(searchInputId).value.trim();
+  if(!val) return '';
+  const exact = getClients().find(c => normalize(c.raisonSociale) === normalize(val));
+  if(exact){ document.getElementById(hiddenInputId).value = exact.id; return exact.id; }
+  return '';
+}
+
+document.getElementById('btnSaveVisit').addEventListener('click', () => {
+  let clientId = document.getElementById('visitClientId').value || tryAutoSelectFromSearch('visitClientSearch','visitClientId');
+  if(!clientId){ showAppAlert('Veuillez sélectionner un client dans la liste de suggestions qui apparaît sous le champ de recherche.'); return; }
+  const date = document.getElementById('visitDate').value;
+  if(!date){ showAppAlert('Veuillez indiquer une date de visite.'); return; }
+  const visit = {
+    id: uid(), date: date,
+    interlocuteur: document.getElementById('visitInterlocuteur').value.trim(),
+    compteRendu: document.getElementById('visitCompteRendu').value.trim(),
+    besoins: document.getElementById('fBesoins').value.trim(),
+    produits: document.getElementById('fProduits').value.trim(),
+    devis: document.getElementById('fDevis').value.trim(),
+    opportunites: document.getElementById('fOpportunites').value.trim(),
+    problemes: document.getElementById('fProblemes').value.trim(),
+    action: document.getElementById('fAction').value.trim(),
+    dateRelance: document.getElementById('fDateRelance').value || '',
+    priorite: selectedPriority || '',
+    recommandation: document.getElementById('fRecommandation').value.trim(),
+    incertain: false, source: 'manuel'
+  };
+  const entry = ensureClientEntry(clientId);
+  entry.visits.push(visit);
+  saveStore(STORE);
+  closeModal('modalVisit');
+  renderAll();
+});
+
+/* ===================== AJOUT PAR PHOTO ===================== */
+let photoBase64 = null, photoMediaType = null, photoAnalysis = null, photoChosenClientId = null;
+document.getElementById('btnNewVisitPhoto').addEventListener('click', () => {
+  photoBase64=null; photoAnalysis=null; photoChosenClientId=null;
+  document.getElementById('photoPreviewWrap').innerHTML='';
+  document.getElementById('photoStatus').textContent='';
+  document.getElementById('photoResultArea').style.display='none';
+  document.getElementById('photoResultArea').innerHTML='';
+  document.getElementById('btnConfirmPhotoVisit').style.display='none';
+  openModal('modalPhoto');
+});
+document.getElementById('photoDrop').addEventListener('click', () => document.getElementById('photoInput').click());
+document.getElementById('photoInput').addEventListener('change', handlePhotoFile);
+document.getElementById('photoDrop').addEventListener('dragover', e=>e.preventDefault());
+document.getElementById('photoDrop').addEventListener('drop', e => { e.preventDefault(); if(e.dataTransfer.files[0]) handlePhotoFileObj(e.dataTransfer.files[0]); });
+
+function handlePhotoFile(e){ if(e.target.files[0]) handlePhotoFileObj(e.target.files[0]); }
+function handlePhotoFileObj(file){
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    photoMediaType = file.type || 'image/jpeg';
+    photoBase64 = dataUrl.split(',')[1];
+    document.getElementById('photoPreviewWrap').innerHTML = `<img src="${dataUrl}" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--border);">`;
+    await runPhotoAnalysis();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runPhotoAnalysis(){
+  const statusEl = document.getElementById('photoStatus');
+  statusEl.innerHTML = '<span class="spinner"></span>Lecture et analyse de la photo en cours...';
+  try{
+    const clientNames = BASE_CLIENTS.map(c=>c.raisonSociale).join(', ');
+    const system = `Tu es un assistant commercial pour un technico-commercial en négoce de matériaux bois/panneaux (Houdard).
+Aujourd'hui nous sommes le ${todayISO()} (format AAAA-MM-JJ).
+Tu reçois la photo d'un compte rendu de visite manuscrit ou imprimé. Fais une OCR précise puis analyse le contenu.
+Voici la liste des raisons sociales de clients connus (pour t'aider à identifier le client concerné, ne choisis QUE parmi cette liste ou indique "INCONNU" si aucune ne correspond clairement) : ${clientNames}
+Réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
+{"clientNomDetecte":"", "date":"AAAA-MM-JJ ou vide si illisible", "interlocuteur":"", "compteRendu":"", "besoins":"", "produits":"", "devis":"", "opportunites":"", "problemes":"", "action":"", "dateRelance":"AAAA-MM-JJ ou vide", "priorite":"Haute|Moyenne|Faible", "recommandation":"", "incertain": true/false, "raisonIncertitude":""}
+Pour "compteRendu" : transcris fidèlement le texte lu, puis corrige l'orthographe et la grammaire et reformule-le dans un style clair et professionnel, sans changer le sens, sans supprimer d'information, et sans jamais ajouter un fait, un chiffre ou un détail qui n'est pas présent sur la photo.
+N'invente jamais une information que tu ne peux pas lire clairement. Si une partie est illisible, mets incertain=true et explique dans raisonIncertitude. Ne complète jamais un champ avec une supposition non fondée sur le texte lu.`;
+    const messages = [{role:'user', content: [
+      {type:'image', source:{type:'base64', media_type: photoMediaType, data: photoBase64}},
+      {type:'text', text:'Analyse ce compte rendu de visite.'}
+    ]}];
+    const result = await callClaude(messages, system);
+    photoAnalysis = result;
+    displayPhotoAnalysis(result);
+  }catch(err){
+    console.error(err);
+    statusEl.innerHTML = `Échec de l'analyse automatique (${err.message}). Cette fonctionnalité nécessite l'exécution dans l'environnement Claude avec accès réseau à l'API. Vous pouvez saisir la visite manuellement via "Visite manuelle".`;
+  }
+}
+
+function displayPhotoAnalysis(r){
+  document.getElementById('photoStatus').textContent = 'Analyse terminée. Vérifiez les informations ci-dessous avant de confirmer.';
+  const matches = r.clientNomDetecte && r.clientNomDetecte !== 'INCONNU' ? findClientMatches(r.clientNomDetecte, 4) : [];
+  const bestScore = matches.length ? matches[0].score : 0;
+  const secondScore = matches.length>1 ? matches[1].score : 0;
+  const autoAssign = bestScore > 0.82 && (bestScore - secondScore) > 0.12;
+
+  let html = `<div class="form-row"><label>Client identifié</label>`;
+  if(autoAssign){
+    photoChosenClientId = matches[0].client.id;
+    html += `<div class="hint">Client reconnu automatiquement : <b>${escapeHtml(matches[0].client.raisonSociale)}</b> (correspondance à ${(bestScore*100).toFixed(0)}%). <a href="#" id="changeClientLink">Changer</a></div>`;
+  } else {
+    html += `<div class="hint">Confirmation nécessaire — sélectionnez le client correspondant :</div><div class="candidate-list" id="candidateList">`;
+    matches.forEach((m,i) => {
+      html += `<label class="candidate-item"><input type="radio" name="candClient" value="${m.client.id}" ${i===0?'checked':''}><span>${escapeHtml(m.client.raisonSociale)} <span class="hint">(${escapeHtml(m.client.ville||'')}, correspondance ${(m.score*100).toFixed(0)}%)</span></span></label>`;
+    });
+    html += `<label class="candidate-item"><input type="radio" name="candClient" value="__manual__"><span>Aucun de ces clients — rechercher manuellement</span></label></div>
+    <input type="text" id="photoManualSearch" placeholder="Rechercher un client..." style="display:none;margin-top:6px;width:100%;padding:7px;border:1px solid var(--border);border-radius:7px;">
+    <div id="photoManualResults" style="max-height:130px;overflow:auto;"></div>`;
+    photoChosenClientId = matches.length ? matches[0].client.id : null;
+  }
+  html += `</div>`;
+
+  html += `<div class="two-col">
+    <div class="form-row"><label>Date de visite</label><input type="date" id="pDate" value="${r.date||todayISO()}"></div>
+    <div class="form-row"><label>Interlocuteur</label><input type="text" id="pInterlocuteur" value="${escapeHtml(r.interlocuteur||'')}"></div>
+  </div>
+  <div class="form-row"><label>Compte rendu (transcrit)</label><textarea id="pCompteRendu">${escapeHtml(r.compteRendu||'')}</textarea></div>
+  <div class="two-col">
+    <div class="form-row"><label>Besoins identifiés</label><textarea id="pBesoins" style="min-height:50px;">${escapeHtml(r.besoins||'')}</textarea></div>
+    <div class="form-row"><label>Produits évoqués</label><textarea id="pProduits" style="min-height:50px;">${escapeHtml(r.produits||'')}</textarea></div>
+  </div>
+  <div class="two-col">
+    <div class="form-row"><label>Devis à prévoir</label><textarea id="pDevis" style="min-height:50px;">${escapeHtml(r.devis||'')}</textarea></div>
+    <div class="form-row"><label>Opportunités</label><textarea id="pOpportunites" style="min-height:50px;">${escapeHtml(r.opportunites||'')}</textarea></div>
+  </div>
+  <div class="two-col">
+    <div class="form-row"><label>Problèmes</label><textarea id="pProblemes" style="min-height:50px;">${escapeHtml(r.problemes||'')}</textarea></div>
+    <div class="form-row"><label>Action à réaliser</label><textarea id="pAction" style="min-height:50px;">${escapeHtml(r.action||'')}</textarea></div>
+  </div>
+  <div class="two-col">
+    <div class="form-row"><label>Date de relance recommandée</label><input type="date" id="pDateRelance" value="${r.dateRelance||''}"></div>
+    <div class="form-row"><label>Priorité</label><select id="pPriorite">
+      <option value="Haute" ${r.priorite==='Haute'?'selected':''}>🔴 Haute</option>
+      <option value="Moyenne" ${r.priorite==='Moyenne'?'selected':''}>🟠 Moyenne</option>
+      <option value="Faible" ${r.priorite==='Faible'?'selected':''}>🟢 Faible</option>
+    </select></div>
+  </div>
+  <div class="form-row"><label>Recommandation commerciale</label><textarea id="pRecommandation" style="min-height:50px;">${escapeHtml(r.recommandation||'')}</textarea></div>`;
+
+  if(r.incertain){
+    html += `<div class="uncertain-flag">Information incertaine – vérification nécessaire.${r.raisonIncertitude? ' '+escapeHtml(r.raisonIncertitude):''}</div>`;
+  }
+
+  document.getElementById('photoResultArea').innerHTML = html;
+  document.getElementById('photoResultArea').style.display = 'block';
+  document.getElementById('btnConfirmPhotoVisit').style.display = 'inline-block';
+
+  if(!autoAssign){
+    document.querySelectorAll('input[name="candClient"]').forEach(radio => radio.addEventListener('change', (e) => {
+      if(e.target.value==='__manual__'){
+        photoChosenClientId = null;
+        document.getElementById('photoManualSearch').style.display='block';
+      } else {
+        photoChosenClientId = e.target.value;
+        document.getElementById('photoManualSearch').style.display='none';
+      }
+    }));
+    const manualSearch = document.getElementById('photoManualSearch');
+    if(manualSearch) manualSearch.addEventListener('input', (e) => {
+      const res = searchClients(e.target.value);
+      document.getElementById('photoManualResults').innerHTML = res.map(c=>`<div class="candidate-item" data-id="${c.id}">${escapeHtml(c.raisonSociale)}</div>`).join('');
+      document.querySelectorAll('#photoManualResults .candidate-item').forEach(el=>el.addEventListener('click',()=>{
+        photoChosenClientId = el.dataset.id;
+        manualSearch.value = getClientById(el.dataset.id).raisonSociale;
+        document.getElementById('photoManualResults').innerHTML='';
+      }));
+    });
+  } else {
+    const link = document.getElementById('changeClientLink');
+    if(link) link.addEventListener('click', (e) => { e.preventDefault(); displayPhotoAnalysis(Object.assign({}, r, {clientNomDetecte:'INCONNU'})); });
+  }
+}
+
+document.getElementById('btnConfirmPhotoVisit').addEventListener('click', () => {
+  if(!photoChosenClientId){ showAppAlert('Veuillez sélectionner un client.'); return; }
+  const date = document.getElementById('pDate').value;
+  if(!date){ showAppAlert('Veuillez indiquer une date.'); return; }
+  const visit = {
+    id: uid(), date: date,
+    interlocuteur: document.getElementById('pInterlocuteur').value.trim(),
+    compteRendu: document.getElementById('pCompteRendu').value.trim(),
+    besoins: document.getElementById('pBesoins').value.trim(),
+    produits: document.getElementById('pProduits').value.trim(),
+    devis: document.getElementById('pDevis').value.trim(),
+    opportunites: document.getElementById('pOpportunites').value.trim(),
+    problemes: document.getElementById('pProblemes').value.trim(),
+    action: document.getElementById('pAction').value.trim(),
+    dateRelance: document.getElementById('pDateRelance').value || '',
+    priorite: document.getElementById('pPriorite').value || '',
+    recommandation: document.getElementById('pRecommandation').value.trim(),
+    incertain: !!(photoAnalysis && photoAnalysis.incertain), source: 'photo'
+  };
+  const entry = ensureClientEntry(photoChosenClientId);
+  entry.visits.push(visit);
+  saveStore(STORE);
+  closeModal('modalPhoto');
+  renderAll();
+});
+
+/* ===================== AJOUT PAR VOIX ===================== */
+let voiceRecognition = null, voiceAnalysis = null, voiceChosenClientId = null;
+
+document.getElementById('btnNewVisitVoice').addEventListener('click', () => {
+  voiceAnalysis = null; voiceChosenClientId = null;
+  document.getElementById('voiceTranscript').value = '';
+  document.getElementById('voiceRecStatus').textContent = '';
+  document.getElementById('voiceRecordArea').style.display = 'block';
+  document.getElementById('voiceResultArea').style.display = 'none';
+  document.getElementById('voiceResultArea').innerHTML = '';
+  document.getElementById('btnConfirmVoiceVisit').style.display = 'none';
+  document.getElementById('btnStartVoice').style.display = 'inline-block';
+  document.getElementById('btnStopVoice').style.display = 'none';
+  openModal('modalVoice');
+});
+
+// Arrête proprement le micro si l'utilisateur ferme la fenêtre en cours d'enregistrement.
+document.querySelectorAll('#modalVoice [data-close]').forEach(btn => btn.addEventListener('click', () => {
+  if(voiceRecognition){ try{ voiceRecognition.stop(); }catch(e){} }
+}));
+
+document.getElementById('btnStartVoice').addEventListener('click', () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const statusEl = document.getElementById('voiceRecStatus');
+  if(!SR){
+    statusEl.textContent = "Reconnaissance vocale non disponible sur ce navigateur. Utilisez plutôt le micro du clavier de votre téléphone directement dans le champ « Compte rendu » de « Visite manuelle », puis « Analyser avec l'IA ».";
+    return;
+  }
+  try{
+    voiceRecognition = new SR();
+    voiceRecognition.lang = 'fr-FR';
+    voiceRecognition.continuous = true;
+    voiceRecognition.interimResults = true;
+    let finalTranscript = '';
+    voiceRecognition.onresult = (event) => {
+      let interim = '';
+      for(let i = event.resultIndex; i < event.results.length; i++){
+        const t = event.results[i][0].transcript;
+        if(event.results[i].isFinal) finalTranscript += t + ' ';
+        else interim += t;
+      }
+      document.getElementById('voiceTranscript').value = (finalTranscript + interim).trim();
+    };
+    voiceRecognition.onerror = (event) => {
+      statusEl.textContent = "Micro indisponible (" + event.error + "). Cette fonctionnalité peut être bloquée dans cet environnement — utilisez le micro du clavier de votre téléphone dans « Visite manuelle » à la place.";
+      document.getElementById('btnStartVoice').style.display = 'inline-block';
+      document.getElementById('btnStopVoice').style.display = 'none';
+    };
+    voiceRecognition.onend = () => {
+      document.getElementById('btnStartVoice').style.display = 'inline-block';
+      document.getElementById('btnStopVoice').style.display = 'none';
+    };
+    voiceRecognition.start();
+    statusEl.textContent = '🔴 Enregistrement en cours... parlez, puis appuyez sur "Terminer et analyser".';
+    document.getElementById('btnStartVoice').style.display = 'none';
+    document.getElementById('btnStopVoice').style.display = 'inline-block';
+  }catch(err){
+    statusEl.textContent = "Impossible de démarrer le micro (" + err.message + "). Utilisez le micro du clavier de votre téléphone dans « Visite manuelle » à la place.";
+  }
+});
+
+document.getElementById('btnStopVoice').addEventListener('click', async () => {
+  if(voiceRecognition){ try{ voiceRecognition.stop(); }catch(e){} }
+  document.getElementById('btnStopVoice').style.display = 'none';
+  const transcript = document.getElementById('voiceTranscript').value.trim();
+  const statusEl = document.getElementById('voiceRecStatus');
+  if(!transcript){ showAppAlert("Aucune transcription détectée. Réessayez, ou saisissez le compte rendu manuellement via « Visite manuelle »."); return; }
+  statusEl.innerHTML = '<span class="spinner"></span>Analyse en cours...';
+  try{
+    const result = await analyzeVoiceTranscript(transcript);
+    voiceAnalysis = result;
+    displayVoiceAnalysis(result);
+    statusEl.textContent = 'Analyse terminée.';
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = "Échec de l'analyse IA (" + err.message + "). Le texte transcrit reste disponible ci-dessus : vous pouvez le copier et le coller dans « Visite manuelle ».";
+  }
+});
+
+async function analyzeVoiceTranscript(transcript){
+  const clientNames = BASE_CLIENTS.map(c=>c.raisonSociale).join(', ');
+  const system = `Tu es un assistant commercial pour un technico-commercial en négoce de matériaux bois/panneaux (Houdard).
+Aujourd'hui nous sommes le ${todayISO()} (format AAAA-MM-JJ).
+Tu reçois la transcription vocale (dictée à l'oral, imparfaite) d'un compte rendu de visite client. Cette transcription peut contenir, en plus du compte rendu lui-même, des instructions destinées à l'application comme "lance l'analyse" ou "enregistre la visite" : ignore-les complètement, elles ne font jamais partie du compte rendu.
+Voici la liste des raisons sociales de clients connus (choisis UNIQUEMENT parmi cette liste, ou "INCONNU" si aucune ne correspond clairement) : ${clientNames}
+Réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
+{"clientNomDetecte":"", "date":"AAAA-MM-JJ (aujourd'hui par défaut si aucune date n'est mentionnée)", "interlocuteur":"", "compteRendu":"", "besoins":"", "produits":"", "devis":"", "opportunites":"", "problemes":"", "action":"", "dateRelance":"AAAA-MM-JJ ou vide", "priorite":"Haute|Moyenne|Faible", "recommandation":"", "incertain": true/false, "raisonIncertitude":""}
+Pour "compteRendu" : reformule le contenu du compte rendu (hors instructions à l'application) dans un français clair et professionnel, en corrigeant les artefacts de dictée vocale, sans changer le sens, sans supprimer d'information, et sans jamais ajouter un fait qui n'a pas été dit.
+N'invente jamais une information absente de la transcription. Laisse une valeur vide ("") si l'information n'est pas mentionnée.`;
+  const messages = [{role:'user', content: `Transcription vocale :\n${transcript}`}];
+  return await callClaude(messages, system);
+}
+
+function displayVoiceAnalysis(r){
+  const matches = r.clientNomDetecte && r.clientNomDetecte !== 'INCONNU' ? findClientMatches(r.clientNomDetecte, 4) : [];
+  const bestScore = matches.length ? matches[0].score : 0;
+  const secondScore = matches.length>1 ? matches[1].score : 0;
+  const autoAssign = bestScore > 0.82 && (bestScore - secondScore) > 0.12;
+
+  let html = `<div class="form-row"><label>Client identifié</label>`;
+  if(autoAssign){
+    voiceChosenClientId = matches[0].client.id;
+    html += `<div class="hint">Client reconnu automatiquement : <b>${escapeHtml(matches[0].client.raisonSociale)}</b> (correspondance à ${(bestScore*100).toFixed(0)}%). <a href="#" id="voiceChangeClientLink">Changer</a></div>`;
+  } else {
+    html += `<div class="hint">Confirmation nécessaire — sélectionnez le client correspondant :</div><div class="candidate-list" id="voiceCandidateList">`;
+    matches.forEach((m,i) => {
+      html += `<label class="candidate-item"><input type="radio" name="voiceCandClient" value="${m.client.id}" ${i===0?'checked':''}><span>${escapeHtml(m.client.raisonSociale)} <span class="hint">(${escapeHtml(m.client.ville||'')}, correspondance ${(m.score*100).toFixed(0)}%)</span></span></label>`;
+    });
+    html += `<label class="candidate-item"><input type="radio" name="voiceCandClient" value="__manual__"><span>Aucun de ces clients — rechercher manuellement</span></label></div>
+    <input type="text" id="voiceManualSearch" placeholder="Rechercher un client..." style="display:none;margin-top:6px;width:100%;padding:7px;border:1px solid var(--border);border-radius:7px;">
+    <div id="voiceManualResults" style="max-height:130px;overflow:auto;"></div>`;
+    voiceChosenClientId = matches.length ? matches[0].client.id : null;
+  }
+  html += `</div>`;
+
+  html += `<div class="two-col">
+    <div class="form-row"><label>Date de visite</label><input type="date" id="vDate" value="${r.date||todayISO()}"></div>
+    <div class="form-row"><label>Interlocuteur</label><input type="text" id="vInterlocuteur" value="${escapeHtml(r.interlocuteur||'')}"></div>
+  </div>
+  <div class="form-row"><label>Compte rendu (reformulé)</label><textarea id="vCompteRendu">${escapeHtml(r.compteRendu||'')}</textarea></div>
+  <div class="two-col">
+    <div class="form-row"><label>Besoins identifiés</label><textarea id="vBesoins" style="min-height:50px;">${escapeHtml(r.besoins||'')}</textarea></div>
+    <div class="form-row"><label>Produits évoqués</label><textarea id="vProduits" style="min-height:50px;">${escapeHtml(r.produits||'')}</textarea></div>
+  </div>
+  <div class="two-col">
+    <div class="form-row"><label>Devis à prévoir</label><textarea id="vDevis" style="min-height:50px;">${escapeHtml(r.devis||'')}</textarea></div>
+    <div class="form-row"><label>Opportunités</label><textarea id="vOpportunites" style="min-height:50px;">${escapeHtml(r.opportunites||'')}</textarea></div>
+  </div>
+  <div class="two-col">
+    <div class="form-row"><label>Problèmes</label><textarea id="vProblemes" style="min-height:50px;">${escapeHtml(r.problemes||'')}</textarea></div>
+    <div class="form-row"><label>Action à réaliser</label><textarea id="vAction" style="min-height:50px;">${escapeHtml(r.action||'')}</textarea></div>
+  </div>
+  <div class="two-col">
+    <div class="form-row"><label>Date de relance recommandée</label><input type="date" id="vDateRelance" value="${r.dateRelance||''}"></div>
+    <div class="form-row"><label>Priorité</label><select id="vPriorite">
+      <option value="Haute" ${r.priorite==='Haute'?'selected':''}>🔴 Haute</option>
+      <option value="Moyenne" ${r.priorite==='Moyenne'?'selected':''}>🟠 Moyenne</option>
+      <option value="Faible" ${r.priorite==='Faible'?'selected':''}>🟢 Faible</option>
+    </select></div>
+  </div>
+  <div class="form-row"><label>Recommandation commerciale</label><textarea id="vRecommandation" style="min-height:50px;">${escapeHtml(r.recommandation||'')}</textarea></div>`;
+
+  if(r.incertain){
+    html += `<div class="uncertain-flag">Information incertaine – vérification nécessaire.${r.raisonIncertitude? ' '+escapeHtml(r.raisonIncertitude):''}</div>`;
+  }
+
+  document.getElementById('voiceResultArea').innerHTML = html;
+  document.getElementById('voiceResultArea').style.display = 'block';
+  document.getElementById('btnConfirmVoiceVisit').style.display = 'inline-block';
+
+  if(!autoAssign){
+    document.querySelectorAll('input[name="voiceCandClient"]').forEach(radio => radio.addEventListener('change', (e) => {
+      if(e.target.value==='__manual__'){
+        voiceChosenClientId = null;
+        document.getElementById('voiceManualSearch').style.display='block';
+      } else {
+        voiceChosenClientId = e.target.value;
+        document.getElementById('voiceManualSearch').style.display='none';
+      }
+    }));
+    const manualSearch = document.getElementById('voiceManualSearch');
+    if(manualSearch) manualSearch.addEventListener('input', (e) => {
+      const res = searchClients(e.target.value);
+      document.getElementById('voiceManualResults').innerHTML = res.map(c=>`<div class="candidate-item" data-id="${c.id}">${escapeHtml(c.raisonSociale)}</div>`).join('');
+      document.querySelectorAll('#voiceManualResults .candidate-item').forEach(el=>el.addEventListener('click',()=>{
+        voiceChosenClientId = el.dataset.id;
+        manualSearch.value = getClientById(el.dataset.id).raisonSociale;
+        document.getElementById('voiceManualResults').innerHTML='';
+      }));
+    });
+  } else {
+    const link = document.getElementById('voiceChangeClientLink');
+    if(link) link.addEventListener('click', (e) => { e.preventDefault(); displayVoiceAnalysis(Object.assign({}, r, {clientNomDetecte:'INCONNU'})); });
+  }
+}
+
+document.getElementById('btnConfirmVoiceVisit').addEventListener('click', () => {
+  if(!voiceChosenClientId){ showAppAlert('Veuillez sélectionner un client.'); return; }
+  const date = document.getElementById('vDate').value;
+  if(!date){ showAppAlert('Veuillez indiquer une date.'); return; }
+  const visit = {
+    id: uid(), date: date,
+    interlocuteur: document.getElementById('vInterlocuteur').value.trim(),
+    compteRendu: document.getElementById('vCompteRendu').value.trim(),
+    besoins: document.getElementById('vBesoins').value.trim(),
+    produits: document.getElementById('vProduits').value.trim(),
+    devis: document.getElementById('vDevis').value.trim(),
+    opportunites: document.getElementById('vOpportunites').value.trim(),
+    problemes: document.getElementById('vProblemes').value.trim(),
+    action: document.getElementById('vAction').value.trim(),
+    dateRelance: document.getElementById('vDateRelance').value || '',
+    priorite: document.getElementById('vPriorite').value || '',
+    recommandation: document.getElementById('vRecommandation').value.trim(),
+    incertain: !!(voiceAnalysis && voiceAnalysis.incertain), source: 'voix'
+  };
+  const entry = ensureClientEntry(voiceChosenClientId);
+  entry.visits.push(visit);
+  saveStore(STORE);
+  closeModal('modalVoice');
+  renderAll();
+});
+
+/* ===================== ACTIONS ===================== */
+function renderActionsTable(){
+  const filter = document.getElementById('actionStatusFilter').value;
+  let actions = STORE.actions || [];
+  if(filter !== 'tous') actions = actions.filter(a=>a.statut===filter);
+  actions = [...actions].sort((a,b)=> (a.dateRecommandee||'').localeCompare(b.dateRecommandee||''));
+  const table = document.getElementById('actionsTable');
+  let thead = '<thead><tr><th style="text-align:left;padding-left:14px;">Client</th><th style="text-align:left;">Action</th><th>Créée le</th><th>Recommandée le</th><th>Statut</th><th></th></tr></thead>';
+  let rows = actions.map(a => {
+    const client = getClientById(a.clientId);
+    const badgeCls = a.statut==='Terminé'?'badge-done':a.statut==='En cours'?'badge-progress':'badge-todo';
+    const late = a.statut!=='Terminé' && a.dateRecommandee && a.dateRecommandee < todayISO();
+    return `<tr>
+      <td style="padding-left:14px;font-weight:600;color:var(--navy);cursor:pointer;" onclick="openFiche('${a.clientId}')">${client? escapeHtml(client.raisonSociale) : '—'}</td>
+      <td>${escapeHtml(a.action)}</td>
+      <td style="text-align:center;">${fmtDateFR(a.dateCreation)}</td>
+      <td style="text-align:center;${late?'color:var(--red);font-weight:700;':''}">${a.dateRecommandee? fmtDateFR(a.dateRecommandee):'—'}</td>
+      <td style="text-align:center;"><span class="badge ${badgeCls}">${a.statut}</span></td>
+      <td style="text-align:center;">
+        <select onchange="updateActionStatus('${a.id}', this.value)" style="font-size:11px;padding:3px 5px;border-radius:5px;border:1px solid var(--border);">
+          <option ${a.statut==='À faire'?'selected':''}>À faire</option>
+          <option ${a.statut==='En cours'?'selected':''}>En cours</option>
+          <option ${a.statut==='Terminé'?'selected':''}>Terminé</option>
+        </select>
+      </td>
+    </tr>`;
+  }).join('');
+  if(actions.length===0) rows = `<tr><td colspan="6"><div class="empty-state">Aucune action.</div></td></tr>`;
+  table.innerHTML = thead + '<tbody>' + rows + '</tbody>';
+}
+function updateActionStatus(id, statut){
+  const a = (STORE.actions||[]).find(x=>x.id===id);
+  if(a){ a.statut = statut; saveStore(STORE); renderDashboard(); renderActionsTable(); }
+}
+
+document.getElementById('btnNewAction').addEventListener('click', () => {
+  document.getElementById('actionClientSearch').value='';
+  document.getElementById('actionClientResults').innerHTML='';
+  document.getElementById('actionClientId').value='';
+  document.getElementById('actionClientChosen').textContent='';
+  document.getElementById('actionLabel').value='';
+  document.getElementById('actionDateRec').value='';
+  document.getElementById('actionStatut').value='À faire';
+  openModal('modalAction');
+});
+document.getElementById('actionClientSearch').addEventListener('input', (e) => {
+  const results = searchClients(e.target.value);
+  document.getElementById('actionClientResults').innerHTML = results.map(c =>
+    `<div class="candidate-item" data-id="${c.id}">${escapeHtml(c.raisonSociale)}</div>`).join('');
+  document.querySelectorAll('#actionClientResults .candidate-item').forEach(el => el.addEventListener('click', () => {
+    document.getElementById('actionClientId').value = el.dataset.id;
+    document.getElementById('actionClientChosen').textContent = 'Client sélectionné : ' + getClientById(el.dataset.id).raisonSociale;
+    document.getElementById('actionClientResults').innerHTML='';
+    document.getElementById('actionClientSearch').value='';
+  }));
+});
+document.getElementById('btnSaveAction').addEventListener('click', () => {
+  const clientId = document.getElementById('actionClientId').value || tryAutoSelectFromSearch('actionClientSearch','actionClientId');
+  const label = document.getElementById('actionLabel').value.trim();
+  if(!clientId || !label){ showAppAlert('Veuillez sélectionner un client (dans la liste de suggestions) et décrire une action.'); return; }
+  STORE.actions = STORE.actions || [];
+  STORE.actions.push({ id: uid(), clientId, action: label, dateCreation: todayISO(),
+    dateRecommandee: document.getElementById('actionDateRec').value || '', statut: document.getElementById('actionStatut').value });
+  saveStore(STORE);
+  closeModal('modalAction');
+  renderDashboard(); renderActionsTable();
+});
+
+/* ===================== SYNCHRONISATION MANUELLE ===================== */
+document.getElementById('btnForceSync').addEventListener('click', async () => {
+  const btn = document.getElementById('btnForceSync');
+  const original = btn.textContent;
+  btn.textContent = '⏳ Synchronisation...'; btn.disabled = true;
+  if(!firebaseUser && !hasArtifactStorage()){
+    btn.textContent = original; btn.disabled = false;
+    showAppAlert("Aucune synchronisation multi-appareils active. Configurez la synchronisation cloud dans « ⚙️ Paramètres », ou utilisez cet outil dans Claude, ou utilisez Exporter / Coller des données pour transférer manuellement.");
+    return;
+  }
+  const ok = await saveStore(STORE);
+  btn.textContent = original; btn.disabled = false;
+  showAppAlert(ok
+    ? "Données de cet appareil envoyées avec succès. Elles seront visibles sur vos autres appareils dès leur prochaine ouverture (immédiatement si la synchronisation cloud est active)."
+    : "Échec de la synchronisation (problème réseau ou de connexion). Vos données restent conservées sur cet appareil ; réessayez plus tard, ou utilisez Exporter / Coller des données en secours.");
+});
+
+/* ===================== PARAMÈTRES / SYNCHRONISATION CLOUD FIREBASE ===================== */
+document.getElementById('btnOpenSettings').addEventListener('click', () => {
+  const cfg = getFirebaseConfig();
+  document.getElementById('fbConfigInput').value = cfg ? JSON.stringify(cfg, null, 2) : '';
+  document.getElementById('fbEmail').value = localStorage.getItem('fb_last_email') || '';
+  document.getElementById('fbPassword').value = '';
+  updateSyncStatusUI();
+  openModal('modalSettings');
+});
+
+function extractConfigObjectText(raw){
+  // Ancre sur "apiKey" (toujours présent dans une config Firebase) puis compte les accolades
+  // pour trouver exactement l'objet qui le contient, même s'il y a du code autour
+  // (import { ... } from ..., const app = initializeApp(...), etc.)
+  const idx = raw.search(/apiKey/i);
+  if(idx === -1) return null;
+  const braceStart = raw.lastIndexOf('{', idx);
+  if(braceStart === -1) return null;
+  let depth = 0;
+  for(let i = braceStart; i < raw.length; i++){
+    if(raw[i] === '{') depth++;
+    else if(raw[i] === '}'){
+      depth--;
+      if(depth === 0) return raw.slice(braceStart, i + 1);
+    }
+  }
+  return null;
+}
+
+function parseFirebaseConfigInput(raw){
+  // Beaucoup de gens collent le code fourni tel quel par Firebase :
+  //   const firebaseConfig = { apiKey: "...", authDomain: "...", ... };
+  // parfois accompagné d'imports ou d'autres lignes de code autour.
+  // Ce n'est pas du JSON strict (clés non citées, mot-clé const, point-virgule, code additionnel).
+  // 1) on tente d'abord du JSON strict.
+  try{ return JSON.parse(raw); }catch(e){ /* on continue */ }
+  // 2) extraction précise ancrée sur "apiKey" avec comptage d'accolades.
+  let objText = extractConfigObjectText(raw);
+  // 3) repli : première { à dernière } si l'ancrage a échoué.
+  if(!objText){
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if(start !== -1 && end > start) objText = raw.slice(start, end + 1);
+  }
+  if(!objText) return null;
+  try{
+    const obj = Function('"use strict"; return (' + objText + ');')();
+    if(obj && typeof obj === 'object') return obj;
+  }catch(e){ /* échec : on renvoie null ci-dessous */ }
+  return null;
+}
+
+document.getElementById('btnFbSaveConfig').addEventListener('click', async () => {
+  const raw = document.getElementById('fbConfigInput').value.trim();
+  if(!raw){ showAppAlert('Veuillez coller la configuration Firebase (objet firebaseConfig).'); return; }
+  const cfg = parseFirebaseConfigInput(raw);
+  if(!cfg || !cfg.apiKey || !cfg.projectId){
+    showAppAlert("Configuration illisible. Collez l'objet firebaseConfig complet tel qu'affiché par Firebase (avec ses accolades { }), en incluant au moins apiKey et projectId.");
+    return;
+  }
+  saveFirebaseConfig(cfg);
+  document.getElementById('fbStatus').textContent = 'Configuration enregistrée. Connectez-vous ci-dessus pour activer la synchronisation.';
+  await initFirebaseFromStoredConfig();
+});
+
+document.getElementById('btnFbLogin').addEventListener('click', async () => {
+  const email = document.getElementById('fbEmail').value.trim();
+  const password = document.getElementById('fbPassword').value;
+  const statusEl = document.getElementById('fbStatus');
+  if(!email || !password){ showAppAlert("Veuillez renseigner l'email et le mot de passe."); return; }
+  statusEl.innerHTML = '<span class="spinner"></span>Connexion...';
+  try{
+    await ensureFirebaseSdk();
+    if(!firebaseApp){
+      const cfg = getFirebaseConfig();
+      if(!cfg){ statusEl.textContent = "Veuillez d'abord enregistrer la configuration Firebase ci-dessus."; return; }
+      firebaseApp = firebase.initializeApp(cfg);
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    }
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+    localStorage.setItem('fb_last_email', email);
+  }catch(err){
+    statusEl.textContent = 'Échec de connexion : ' + err.message;
+  }
+});
+
+document.getElementById('btnFbLogout').addEventListener('click', async () => {
+  try{ if(window.firebase) await firebase.auth().signOut(); }catch(e){}
+});
+
+/* ===================== EXPORT / IMPORT ===================== */
+function mergeImportedData(imported){
+  Object.keys(imported.clients||{}).forEach(cid => {
+    const entry = ensureClientEntry(cid);
+    const existingIds = new Set(entry.visits.map(v=>v.id));
+    (imported.clients[cid].visits||[]).forEach(v => { if(!existingIds.has(v.id)) entry.visits.push(v); });
+  });
+  const existingActionIds = new Set((STORE.actions||[]).map(a=>a.id));
+  (imported.actions||[]).forEach(a => { if(!existingActionIds.has(a.id)) STORE.actions.push(a); });
+  STORE.deletedClients = STORE.deletedClients || [];
+  (imported.deletedClients||[]).forEach(id => { if(!STORE.deletedClients.includes(id)) STORE.deletedClients.push(id); });
+  saveStore(STORE);
+  renderAll();
+}
+
+/* Export : le téléchargement de fichier (<a download>) est bloqué dans l'environnement artifact.
+   On tente quand même le téléchargement en silence (utile hors artifact), mais la méthode fiable
+   partout est d'afficher le JSON dans une zone de texte à copier/coller manuellement. */
+document.getElementById('btnExport').addEventListener('click', () => {
+  const json = JSON.stringify(STORE, null, 2);
+  try{
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'suivi_visites_export_' + todayISO() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(err){ /* téléchargement indisponible dans cet environnement — on continue vers le copier/coller */ }
+  const ta = document.getElementById('exportTextArea');
+  ta.value = json;
+  document.getElementById('exportCopyStatus').textContent = '';
+  openModal('modalExport');
+  setTimeout(() => { ta.focus(); ta.select(); }, 50);
+});
+document.getElementById('btnDoCopyExport').addEventListener('click', async () => {
+  const ta = document.getElementById('exportTextArea');
+  ta.focus(); ta.select();
+  const statusEl = document.getElementById('exportCopyStatus');
+  try{
+    await navigator.clipboard.writeText(ta.value);
+    statusEl.textContent = 'Copié dans le presse-papiers.';
+  }catch(err){
+    const ok = document.execCommand && document.execCommand('copy');
+    statusEl.textContent = ok ? 'Copié dans le presse-papiers.' : "Copie automatique indisponible : le texte est sélectionné, utilisez Ctrl+C (ou Cmd+C) pour le copier manuellement.";
+  }
+});
+
+document.getElementById('btnImportTrigger').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let imported;
+    try{ imported = JSON.parse(reader.result); }
+    catch(err){ showAppAlert('Fichier invalide : ' + err.message); return; }
+    showAppConfirm('Importer ces données ? Les visites et actions seront fusionnées avec les données existantes (aucune suppression).', () => {
+      mergeImportedData(imported);
+      showAppAlert('Import terminé.');
+    });
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('btnImportPasteTrigger').addEventListener('click', () => {
+  document.getElementById('importPasteArea').value = '';
+  openModal('modalImportPaste');
+});
+document.getElementById('btnDoImportPaste').addEventListener('click', () => {
+  const raw = document.getElementById('importPasteArea').value.trim();
+  if(!raw){ showAppAlert("Veuillez coller un contenu JSON avant d'importer."); return; }
+  let imported;
+  try{ imported = JSON.parse(raw); }
+  catch(err){ showAppAlert('Texte JSON invalide : ' + err.message); return; }
+  closeModal('modalImportPaste');
+  showAppConfirm('Importer ces données ? Les visites et actions seront fusionnées avec les données existantes (aucune suppression).', () => {
+    mergeImportedData(imported);
+    showAppAlert('Import terminé.');
+  });
+});
+
+/* ===================== NAVIGATION / FILTRES / VUES ===================== */
+document.getElementById('searchBox').addEventListener('input', (e) => { UI.search = e.target.value; renderAnnualTable(); });
+document.getElementById('yearSelect').addEventListener('change', (e) => { UI.year = parseInt(e.target.value); renderAnnualTable(); });
+document.querySelectorAll('#filterChips .filter-chip').forEach(chip => chip.addEventListener('click', () => {
+  document.querySelectorAll('#filterChips .filter-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active'); UI.filter = chip.dataset.filter; renderAnnualTable();
+}));
+document.getElementById('btnResetFilters').addEventListener('click', () => {
+  UI.filter='tous'; UI.search='';
+  document.getElementById('searchBox').value='';
+  document.querySelectorAll('#filterChips .filter-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('#filterChips .filter-chip[data-filter="tous"]').classList.add('active');
+  renderAnnualTable();
+});
+document.getElementById('btnToday').addEventListener('click', () => {
+  UI.year = new Date().getFullYear(); UI.calMonth = new Date().getMonth(); UI.calYear = new Date().getFullYear();
+  populateYearSelect(); document.getElementById('yearSelect').value = UI.year;
+  renderAnnualTable(); renderMonthCalendar();
+});
+document.querySelectorAll('.view-toggle button').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); UI.view = btn.dataset.view;
+  document.getElementById('viewAnnual').style.display = UI.view==='annual' ? '' : 'none';
+  document.getElementById('viewCalendar').style.display = UI.view==='calendar' ? '' : 'none';
+  if(UI.view==='calendar') renderMonthCalendar();
+}));
+document.getElementById('prevMonth').addEventListener('click', () => {
+  UI.calMonth--; if(UI.calMonth<0){UI.calMonth=11; UI.calYear--;} renderMonthCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  UI.calMonth++; if(UI.calMonth>11){UI.calMonth=0; UI.calYear++;} renderMonthCalendar();
+});
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-suivi').style.display = btn.dataset.tab==='suivi' ? '' : 'none';
+  document.getElementById('tab-actions').style.display = btn.dataset.tab==='actions' ? '' : 'none';
+  if(btn.dataset.tab==='actions') renderActionsTable();
+}));
+document.getElementById('actionStatusFilter').addEventListener('change', renderActionsTable);
+
+/* ===================== INIT ===================== */
+function renderAll(){
+  renderDashboard();
+  populateYearSelect();
+  renderAnnualTable();
+  if(UI.view==='calendar') renderMonthCalendar();
+  renderActionsTable();
+}
+(async function init(){
+  refreshHeaderSyncNote();
+  const result = await loadStore();
+  STORE = result.store;
+  // Si des données existent uniquement en local (ex: saisies avec une version du fichier antérieure
+  // à l'ajout de la synchronisation) et que rien n'existe encore côté compte, on les pousse automatiquement.
+  if(hasArtifactStorage() && result.source === 'local' && !isStoreEmpty(STORE)){
+    saveStore(STORE);
+  }
+  renderAll();
+  initFirebaseFromStoredConfig(); // n'a d'effet que si une configuration a déjà été enregistrée précédemment
+})();
+</script>
+</body>
+</html>
