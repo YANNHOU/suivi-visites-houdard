@@ -319,6 +319,19 @@ footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20
         <button class="btn btn-sm" id="btnFbLogout" style="display:none;">Se déconnecter</button>
       </div>
       <div id="fbStatus" class="hint" style="margin-top:10px;"></div>
+
+      <hr style="margin:20px 0;border:none;border-top:1px solid var(--border);">
+      <p class="hint" style="margin-top:0;"><b>Analyse IA (texte / photo / voix)</b> — Fonctionne gratuitement quand cet outil tourne dans Claude. Hors de Claude (ce fichier hébergé), il faut votre propre clé API Anthropic, facturée séparément à l'usage (quelques centimes par analyse). <a href="https://console.anthropic.com" target="_blank" rel="noopener">Obtenir une clé sur console.anthropic.com</a>.</p>
+      <div class="form-row">
+        <label>Clé API Anthropic (optionnelle)</label>
+        <input type="password" id="anthropicKeyInput" placeholder="sk-ant-...">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-navy btn-sm" id="btnSaveAnthropicKey">Enregistrer la clé</button>
+        <button class="btn btn-sm" id="btnClearAnthropicKey">Retirer la clé</button>
+      </div>
+      <div id="anthropicKeyStatus" class="hint" style="margin-top:10px;"></div>
+      <div class="hint" style="margin-top:6px;">⚠️ Cette clé est stockée uniquement dans ce navigateur. Ne l'utilisez que sur vos appareils personnels, jamais sur un poste partagé.</div>
     </div>
     <div class="modal-footer"><button class="btn" data-close>Fermer</button></div>
   </div>
@@ -415,6 +428,7 @@ const STORAGE_KEY = 'houdard_suivi_visites_v1';
 const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const JOURS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const ANTHROPIC_MODEL = 'claude-sonnet-4-6';
+const ANTHROPIC_MODEL_BYOK = 'claude-sonnet-5';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const RECENT_THRESHOLD_DAYS = 60;
 
@@ -1028,12 +1042,29 @@ function fillAnalysisFields(r){
   }
 }
 
+function getAnthropicApiKey(){
+  try{ return localStorage.getItem('anthropic_api_key_byok') || ''; }catch(e){ return ''; }
+}
 async function callClaude(messages, system){
+  const key = getAnthropicApiKey();
+  const headers = {'Content-Type':'application/json'};
+  let model = ANTHROPIC_MODEL;
+  if(key){
+    // Clé personnelle : appel direct à l'API Anthropic publique, nécessaire hors de l'environnement Claude.
+    headers['x-api-key'] = key;
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+    model = ANTHROPIC_MODEL_BYOK;
+  }
   const resp = await fetch(ANTHROPIC_URL, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ model: ANTHROPIC_MODEL, max_tokens: 1200, system: system, messages: messages })
+    method:'POST', headers: headers,
+    body: JSON.stringify({ model: model, max_tokens: 1200, system: system, messages: messages })
   });
-  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  if(!resp.ok){
+    let detail = '';
+    try{ const errBody = await resp.json(); detail = errBody && errBody.error && errBody.error.message ? ' — ' + errBody.error.message : ''; }catch(e){}
+    throw new Error('HTTP ' + resp.status + detail);
+  }
   const data = await resp.json();
   const textBlock = (data.content||[]).find(b=>b.type==='text');
   if(!textBlock) throw new Error('Réponse vide');
@@ -1546,7 +1577,33 @@ document.getElementById('btnOpenSettings').addEventListener('click', () => {
   document.getElementById('fbEmail').value = localStorage.getItem('fb_last_email') || '';
   document.getElementById('fbPassword').value = '';
   updateSyncStatusUI();
+  updateAnthropicKeyStatusUI();
   openModal('modalSettings');
+});
+
+function updateAnthropicKeyStatusUI(){
+  const key = getAnthropicApiKey();
+  const statusEl = document.getElementById('anthropicKeyStatus');
+  const inputEl = document.getElementById('anthropicKeyInput');
+  if(!statusEl) return;
+  if(key){
+    statusEl.textContent = 'Clé enregistrée (se terminant par ...' + key.slice(-4) + '). Les analyses IA utiliseront cette clé sur cet appareil.';
+    if(inputEl) inputEl.value = '';
+    inputEl.placeholder = 'Clé déjà enregistrée — laisser vide pour la conserver';
+  } else {
+    statusEl.textContent = "Aucune clé enregistrée. Les analyses IA ne fonctionneront que si cet outil tourne dans l'environnement Claude.";
+    if(inputEl) inputEl.placeholder = 'sk-ant-...';
+  }
+}
+document.getElementById('btnSaveAnthropicKey').addEventListener('click', () => {
+  const val = document.getElementById('anthropicKeyInput').value.trim();
+  if(!val){ showAppAlert('Veuillez coller votre clé API Anthropic (elle commence par "sk-ant-").'); return; }
+  localStorage.setItem('anthropic_api_key_byok', val);
+  updateAnthropicKeyStatusUI();
+});
+document.getElementById('btnClearAnthropicKey').addEventListener('click', () => {
+  localStorage.removeItem('anthropic_api_key_byok');
+  updateAnthropicKeyStatusUI();
 });
 
 function extractConfigObjectText(raw){
