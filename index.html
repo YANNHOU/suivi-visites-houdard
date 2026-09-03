@@ -110,10 +110,6 @@ table.annual tr:hover td.client-col{background:#f7f9fc;}
 .month-cell .vlink{display:block;margin-top:3px;background:var(--grey-bg);border-radius:4px;padding:2px 4px;font-size:10.5px;color:var(--navy);cursor:pointer;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .month-nav{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
 .priority-select{display:flex;gap:6px;}
-.priority-opt{border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600;}
-.priority-opt.sel-haute.sel{background:#fde4e1;border-color:var(--red);color:var(--red);}
-.priority-opt.sel-moyenne.sel{background:var(--amber-bg);border-color:var(--amber);color:#8a5c00;}
-.priority-opt.sel-faible.sel{background:var(--green-bg);border-color:var(--green);color:var(--green);}
 .uncertain-flag{background:var(--amber-bg);border:1px solid var(--amber);color:#8a5c00;border-radius:7px;padding:8px 10px;font-size:12px;margin-top:8px;}
 footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20px;}
 ::-webkit-scrollbar{height:10px;width:10px;} ::-webkit-scrollbar-thumb{background:#c6ccd6;border-radius:6px;}
@@ -129,14 +125,13 @@ footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20
   </div>
   <div class="topbar-actions">
     <button class="btn btn-ghost btn-sm" id="btnOpenSettings">⚙️ Paramètres</button>
-    <button class="btn btn-ghost btn-sm" id="btnForceSync" title="Renvoyer les données de cet appareil vers votre compte Claude">🔄 Forcer la synchro</button>
     <button class="btn btn-ghost btn-sm" id="btnExport">⭳ Exporter</button>
     <button class="btn btn-ghost btn-sm" id="btnImportTrigger">⭱ Importer un fichier</button>
     <button class="btn btn-ghost btn-sm" id="btnImportPasteTrigger">📋 Coller des données</button>
     <input type="file" id="importFile" accept="application/json" style="display:none">
     <button class="btn btn-navy" id="btnNewVisitManual">+ Visite manuelle</button>
-    <button class="btn btn-primary" id="btnNewVisitPhoto">📷 Ajouter par photo</button>
     <button class="btn btn-primary" id="btnNewVisitVoice">🎤 Visite vocale</button>
+    <button class="btn btn-primary" id="btnNewAgenda">📅 RDV → Calendrier</button>
   </div>
 </header>
 
@@ -234,32 +229,18 @@ footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20
       </div>
       <div class="form-row">
         <label>Compte rendu <span id="crReformuleHint" style="display:none;font-weight:600;color:var(--green);text-transform:none;">— corrigé et reformulé par l'IA</span></label>
-        <textarea id="visitCompteRendu" placeholder="Décrivez la visite (ou collez le texte transcrit d'une photo)..."></textarea>
+        <textarea id="visitCompteRendu" placeholder="Décrivez la visite..."></textarea>
       </div>
       <button class="btn btn-navy btn-sm" id="btnAnalyzeText">✨ Analyser avec l'IA</button>
       <span id="analyzeTextStatus" class="hint"></span>
       <div id="analysisFields" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
         <div class="two-col">
           <div class="form-row"><label>Besoins identifiés</label><textarea id="fBesoins" style="min-height:50px;"></textarea></div>
-          <div class="form-row"><label>Produits évoqués</label><textarea id="fProduits" style="min-height:50px;"></textarea></div>
-        </div>
-        <div class="two-col">
-          <div class="form-row"><label>Devis à prévoir</label><textarea id="fDevis" style="min-height:50px;"></textarea></div>
           <div class="form-row"><label>Opportunités</label><textarea id="fOpportunites" style="min-height:50px;"></textarea></div>
         </div>
         <div class="two-col">
           <div class="form-row"><label>Problèmes rencontrés</label><textarea id="fProblemes" style="min-height:50px;"></textarea></div>
-          <div class="form-row"><label>Action à réaliser</label><textarea id="fAction" style="min-height:50px;"></textarea></div>
-        </div>
-        <div class="two-col">
           <div class="form-row"><label>Date de relance recommandée</label><input type="date" id="fDateRelance"></div>
-          <div class="form-row"><label>Priorité</label>
-            <div class="priority-select">
-              <div class="priority-opt sel-haute" data-prio="Haute">🔴 Haute</div>
-              <div class="priority-opt sel-moyenne" data-prio="Moyenne">🟠 Moyenne</div>
-              <div class="priority-opt sel-faible" data-prio="Faible">🟢 Faible</div>
-            </div>
-          </div>
         </div>
         <div class="form-row"><label>Recommandation commerciale</label><textarea id="fRecommandation" style="min-height:50px;"></textarea></div>
       </div>
@@ -271,21 +252,39 @@ footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20
   </div>
 </div>
 
-<!-- MODAL: Ajout par photo -->
-<div class="modal-overlay" id="modalPhoto">
-  <div class="modal">
-    <div class="modal-header"><h3>Ajouter un compte rendu par photo</h3><button class="x" data-close>&times;</button></div>
+<!-- MODAL: RDV vers calendrier (Google/Samsung/Outlook via fichier .ics standard) -->
+<div class="modal-overlay" id="modalAgenda">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h3>Nouveau rendez-vous → mon calendrier</h3><button class="x" data-close>&times;</button></div>
     <div class="modal-body">
-      <div class="file-drop" id="photoDrop">📷 Cliquez ou déposez une photo du compte rendu (JPG/PNG)</div>
-      <input type="file" id="photoInput" accept="image/*" style="display:none">
-      <div id="photoPreviewWrap" style="margin-top:10px;"></div>
-      <div id="photoStatus" class="hint" style="margin-top:8px;"></div>
-      <div class="hint">⚠️ Cette fonctionnalité d'analyse automatique par IA nécessite une connexion active et l'exécution dans l'environnement Claude (elle ne fonctionnera pas si ce fichier est ouvert hors ligne, en simple double-clic, sans accès à l'API). Le reste de l'outil fonctionne intégralement hors ligne.</div>
-      <div id="photoResultArea" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);"></div>
+      <p class="hint" style="margin-top:0;">Décrivez le rendez-vous en une phrase (ex : <i>"RDV chez Cadribois vendredi prochain à 14h30 pour discuter du devis panneaux OSB"</i>), tapez-le ou dictez-le, puis cliquez sur "Analyser".</p>
+      <div class="form-row">
+        <textarea id="agendaInput" placeholder="Décrivez le rendez-vous..." style="min-height:80px;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="btn btn-navy btn-sm" id="btnAgendaStartVoice">🎤 Dicter</button>
+        <button class="btn btn-primary btn-sm" id="btnAgendaAnalyze">✨ Analyser</button>
+        <span id="agendaStatus" class="hint"></span>
+      </div>
+      <div id="agendaResultArea" style="display:none;margin-top:8px;padding-top:12px;border-top:1px solid var(--border);">
+        <div class="two-col">
+          <div class="form-row"><label>Titre</label><input type="text" id="agTitre"></div>
+          <div class="form-row"><label>Lieu</label><input type="text" id="agLieu"></div>
+        </div>
+        <div class="two-col">
+          <div class="form-row"><label>Date</label><input type="date" id="agDate"></div>
+          <div class="form-row"><label>Heure début</label><input type="time" id="agHeureDebut"></div>
+        </div>
+        <div class="two-col">
+          <div class="form-row"><label>Heure fin</label><input type="time" id="agHeureFin"></div>
+          <div class="form-row"><label>Client identifié (optionnel)</label><input type="text" id="agClientNom" readonly style="background:#f4f6f9;"></div>
+        </div>
+        <div class="form-row"><label>Description</label><textarea id="agDescription" style="min-height:60px;"></textarea></div>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn" data-close>Annuler</button>
-      <button class="btn btn-primary" id="btnConfirmPhotoVisit" style="display:none;">Confirmer et enregistrer</button>
+      <button class="btn" data-close>Fermer</button>
+      <button class="btn btn-primary" id="btnAddToCalendar" style="display:none;">📅 Ajouter à mon calendrier</button>
     </div>
   </div>
 </div>
@@ -321,7 +320,7 @@ footer.appfoot{text-align:center;color:var(--text-mut);font-size:11px;padding:20
       <div id="fbStatus" class="hint" style="margin-top:10px;"></div>
 
       <hr style="margin:20px 0;border:none;border-top:1px solid var(--border);">
-      <p class="hint" style="margin-top:0;"><b>Analyse IA (texte / photo / voix)</b> — Fonctionne gratuitement quand cet outil tourne dans Claude. Hors de Claude (ce fichier hébergé), il faut votre propre clé API Anthropic, facturée séparément à l'usage (quelques centimes par analyse). <a href="https://console.anthropic.com" target="_blank" rel="noopener">Obtenir une clé sur console.anthropic.com</a>.</p>
+      <p class="hint" style="margin-top:0;"><b>Analyse IA (texte / voix)</b> — Fonctionne gratuitement quand cet outil tourne dans Claude. Hors de Claude (ce fichier hébergé), il faut votre propre clé API Anthropic, facturée séparément à l'usage (quelques centimes par analyse). <a href="https://console.anthropic.com" target="_blank" rel="noopener">Obtenir une clé sur console.anthropic.com</a>.</p>
       <div class="form-row">
         <label>Clé API Anthropic (optionnelle)</label>
         <input type="password" id="anthropicKeyInput" placeholder="sk-ant-...">
@@ -798,21 +797,18 @@ function showTooltip(evt, clientId, visitId){
   const visit = client.visits.find(v=>v.id===visitId);
   if(!visit) return;
   const tt = document.getElementById('tooltip');
-  const prioClass = visit.priorite ? 'prio-'+visit.priorite.toLowerCase() : '';
   let html = `<h4>${escapeHtml(client.raisonSociale)} — ${fmtDateFR(visit.date)}</h4>`;
   if(visit.interlocuteur) html += `<div><span class="tt-label">Interlocuteur : </span>${escapeHtml(visit.interlocuteur)}</div>`;
   html += `<div class="tt-section"><span class="tt-label">Compte rendu</span><div>${escapeHtml(visit.compteRendu||'(non renseigné)')}</div></div>`;
   const analysisRows = [
-    ['Besoins identifiés', visit.besoins], ['Produits évoqués', visit.produits],
-    ['Devis à prévoir', visit.devis], ['Opportunités', visit.opportunites],
-    ['Problèmes', visit.problemes], ['Action à réaliser', visit.action],
+    ['Besoins identifiés', visit.besoins], ['Opportunités', visit.opportunites],
+    ['Problèmes', visit.problemes],
   ];
   const nonEmpty = analysisRows.filter(([,v]) => v);
-  if(nonEmpty.length || visit.recommandation || visit.priorite){
+  if(nonEmpty.length || visit.recommandation){
     html += '<div class="tt-section"><span class="tt-label">Analyse / recommandations</span>';
     nonEmpty.forEach(([label,val]) => html += `<div style="margin-top:4px;"><b>${label} :</b> ${escapeHtml(val)}</div>`);
     if(visit.dateRelance) html += `<div style="margin-top:4px;"><b>Relance recommandée :</b> ${fmtDateFR(visit.dateRelance)}</div>`;
-    if(visit.priorite) html += `<div style="margin-top:4px;"><b>Priorité :</b> <span class="${prioClass}">${visit.priorite}</span></div>`;
     if(visit.recommandation) html += `<div style="margin-top:4px;"><b>Recommandation :</b> ${escapeHtml(visit.recommandation)}</div>`;
     html += '</div>';
   }
@@ -894,9 +890,8 @@ function openFiche(clientId){
   } else {
     const sorted = [...c.visits].sort((a,b)=> b.date.localeCompare(a.date));
     html += sorted.map(v => {
-      const prioBadge = v.priorite ? ` &middot; Priorité: <b>${v.priorite}</b>` : '';
       return `<div class="history-item">
-        <div class="hdate">${fmtDateFR(v.date)}${v.interlocuteur? ' — '+escapeHtml(v.interlocuteur):''}${prioBadge}</div>
+        <div class="hdate">${fmtDateFR(v.date)}${v.interlocuteur? ' — '+escapeHtml(v.interlocuteur):''}</div>
         <div class="htxt">${escapeHtml(v.compteRendu||'')}</div>
         ${v.recommandation? '<div class="htxt" style="margin-top:6px;"><b>Recommandation :</b> '+escapeHtml(v.recommandation)+'</div>':''}
         ${v.dateRelance? '<div class="htxt"><b>Relance recommandée :</b> '+fmtDateFR(v.dateRelance)+'</div>':''}
@@ -965,7 +960,6 @@ function showAppConfirm(msg, onYes, title){
 }
 
 /* ===================== NOUVELLE VISITE MANUELLE ===================== */
-let selectedPriority = null;
 function resetVisitModal(){
   document.getElementById('visitClientSearch').value='';
   document.getElementById('visitClientResults').innerHTML='';
@@ -977,10 +971,8 @@ function resetVisitModal(){
   document.getElementById('crReformuleHint').style.display='none';
   document.getElementById('analyzeTextStatus').textContent='';
   document.getElementById('analysisFields').style.display='none';
-  ['fBesoins','fProduits','fDevis','fOpportunites','fProblemes','fAction','fRecommandation'].forEach(id=>document.getElementById(id).value='');
+  ['fBesoins','fOpportunites','fProblemes','fRecommandation'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fDateRelance').value='';
-  selectedPriority = null;
-  document.querySelectorAll('#modalVisit .priority-opt').forEach(o=>o.classList.remove('sel'));
 }
 document.getElementById('btnNewVisitManual').addEventListener('click', () => { resetVisitModal(); openModal('modalVisit'); });
 
@@ -996,12 +988,6 @@ document.getElementById('visitClientSearch').addEventListener('input', (e) => {
     document.getElementById('visitClientSearch').value='';
   }));
 });
-
-document.querySelectorAll('#modalVisit .priority-opt').forEach(opt => opt.addEventListener('click', () => {
-  document.querySelectorAll('#modalVisit .priority-opt').forEach(o=>o.classList.remove('sel'));
-  opt.classList.add('sel');
-  selectedPriority = opt.dataset.prio;
-}));
 
 document.getElementById('visitCompteRendu').addEventListener('input', () => { document.getElementById('crReformuleHint').style.display='none'; });
 document.getElementById('btnAnalyzeText').addEventListener('click', async () => {
@@ -1028,18 +1014,11 @@ function fillAnalysisFields(r){
     document.getElementById('crReformuleHint').style.display = 'inline';
   }
   document.getElementById('fBesoins').value = r.besoins||'';
-  document.getElementById('fProduits').value = r.produits||'';
-  document.getElementById('fDevis').value = r.devis||'';
   document.getElementById('fOpportunites').value = r.opportunites||'';
   document.getElementById('fProblemes').value = r.problemes||'';
-  document.getElementById('fAction').value = r.action||'';
   document.getElementById('fRecommandation').value = r.recommandation||'';
   document.getElementById('fDateRelance').value = r.dateRelance||'';
   if(r.interlocuteur && !document.getElementById('visitInterlocuteur').value) document.getElementById('visitInterlocuteur').value = r.interlocuteur;
-  if(r.priorite){
-    selectedPriority = r.priorite;
-    document.querySelectorAll('#modalVisit .priority-opt').forEach(o=>o.classList.toggle('sel', o.dataset.prio===r.priorite));
-  }
 }
 
 function getAnthropicApiKey(){
@@ -1076,7 +1055,7 @@ async function analyzeReportText(text, clientName){
   const system = `Tu es un assistant commercial pour un technico-commercial en négoce de matériaux bois/panneaux (Houdard).
 Aujourd'hui nous sommes le ${todayISO()} (format AAAA-MM-JJ).
 Analyse le compte rendu de visite client fourni et réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
-{"compteRenduReformule":"", "interlocuteur":"", "besoins":"", "produits":"", "devis":"", "opportunites":"", "problemes":"", "action":"", "dateRelance":"AAAA-MM-JJ ou vide", "priorite":"Haute|Moyenne|Faible", "recommandation":""}
+{"compteRenduReformule":"", "interlocuteur":"", "besoins":"", "opportunites":"", "problemes":"", "dateRelance":"AAAA-MM-JJ ou vide", "recommandation":""}
 Pour "compteRenduReformule" : corrige l'orthographe et la grammaire du compte rendu saisi, et reformule-le dans un style clair et professionnel, sans changer le sens, sans supprimer d'information, et sans jamais ajouter un fait, un chiffre ou un détail qui n'est pas présent dans le texte d'origine.
 Pour les autres champs : n'invente aucune information absente du texte. Laisse une valeur vide ("") si l'information n'est pas mentionnée. La dateRelance doit être calculée à partir d'aujourd'hui si une durée relative est mentionnée (ex: "sous 10 jours").`;
   const messages = [{role:'user', content: `Client : ${clientName}\nCompte rendu :\n${text}`}];
@@ -1101,13 +1080,9 @@ document.getElementById('btnSaveVisit').addEventListener('click', () => {
     interlocuteur: document.getElementById('visitInterlocuteur').value.trim(),
     compteRendu: document.getElementById('visitCompteRendu').value.trim(),
     besoins: document.getElementById('fBesoins').value.trim(),
-    produits: document.getElementById('fProduits').value.trim(),
-    devis: document.getElementById('fDevis').value.trim(),
     opportunites: document.getElementById('fOpportunites').value.trim(),
     problemes: document.getElementById('fProblemes').value.trim(),
-    action: document.getElementById('fAction').value.trim(),
     dateRelance: document.getElementById('fDateRelance').value || '',
-    priorite: selectedPriority || '',
     recommandation: document.getElementById('fRecommandation').value.trim(),
     incertain: false, source: 'manuel'
   };
@@ -1115,171 +1090,6 @@ document.getElementById('btnSaveVisit').addEventListener('click', () => {
   entry.visits.push(visit);
   saveStore(STORE);
   closeModal('modalVisit');
-  renderAll();
-});
-
-/* ===================== AJOUT PAR PHOTO ===================== */
-let photoBase64 = null, photoMediaType = null, photoAnalysis = null, photoChosenClientId = null;
-document.getElementById('btnNewVisitPhoto').addEventListener('click', () => {
-  photoBase64=null; photoAnalysis=null; photoChosenClientId=null;
-  document.getElementById('photoPreviewWrap').innerHTML='';
-  document.getElementById('photoStatus').textContent='';
-  document.getElementById('photoResultArea').style.display='none';
-  document.getElementById('photoResultArea').innerHTML='';
-  document.getElementById('btnConfirmPhotoVisit').style.display='none';
-  openModal('modalPhoto');
-});
-document.getElementById('photoDrop').addEventListener('click', () => document.getElementById('photoInput').click());
-document.getElementById('photoInput').addEventListener('change', handlePhotoFile);
-document.getElementById('photoDrop').addEventListener('dragover', e=>e.preventDefault());
-document.getElementById('photoDrop').addEventListener('drop', e => { e.preventDefault(); if(e.dataTransfer.files[0]) handlePhotoFileObj(e.dataTransfer.files[0]); });
-
-function handlePhotoFile(e){ if(e.target.files[0]) handlePhotoFileObj(e.target.files[0]); }
-function handlePhotoFileObj(file){
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const dataUrl = reader.result;
-    photoMediaType = file.type || 'image/jpeg';
-    photoBase64 = dataUrl.split(',')[1];
-    document.getElementById('photoPreviewWrap').innerHTML = `<img src="${dataUrl}" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--border);">`;
-    await runPhotoAnalysis();
-  };
-  reader.readAsDataURL(file);
-}
-
-async function runPhotoAnalysis(){
-  const statusEl = document.getElementById('photoStatus');
-  statusEl.innerHTML = '<span class="spinner"></span>Lecture et analyse de la photo en cours...';
-  try{
-    const clientNames = BASE_CLIENTS.map(c=>c.raisonSociale).join(', ');
-    const system = `Tu es un assistant commercial pour un technico-commercial en négoce de matériaux bois/panneaux (Houdard).
-Aujourd'hui nous sommes le ${todayISO()} (format AAAA-MM-JJ).
-Tu reçois la photo d'un compte rendu de visite manuscrit ou imprimé. Fais une OCR précise puis analyse le contenu.
-Voici la liste des raisons sociales de clients connus (pour t'aider à identifier le client concerné, ne choisis QUE parmi cette liste ou indique "INCONNU" si aucune ne correspond clairement) : ${clientNames}
-Réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
-{"clientNomDetecte":"", "date":"AAAA-MM-JJ ou vide si illisible", "interlocuteur":"", "compteRendu":"", "besoins":"", "produits":"", "devis":"", "opportunites":"", "problemes":"", "action":"", "dateRelance":"AAAA-MM-JJ ou vide", "priorite":"Haute|Moyenne|Faible", "recommandation":"", "incertain": true/false, "raisonIncertitude":""}
-Pour "compteRendu" : transcris fidèlement le texte lu, puis corrige l'orthographe et la grammaire et reformule-le dans un style clair et professionnel, sans changer le sens, sans supprimer d'information, et sans jamais ajouter un fait, un chiffre ou un détail qui n'est pas présent sur la photo.
-N'invente jamais une information que tu ne peux pas lire clairement. Si une partie est illisible, mets incertain=true et explique dans raisonIncertitude. Ne complète jamais un champ avec une supposition non fondée sur le texte lu.`;
-    const messages = [{role:'user', content: [
-      {type:'image', source:{type:'base64', media_type: photoMediaType, data: photoBase64}},
-      {type:'text', text:'Analyse ce compte rendu de visite.'}
-    ]}];
-    const result = await callClaude(messages, system);
-    photoAnalysis = result;
-    displayPhotoAnalysis(result);
-  }catch(err){
-    console.error(err);
-    statusEl.innerHTML = `Échec de l'analyse automatique (${err.message}). Cette fonctionnalité nécessite l'exécution dans l'environnement Claude avec accès réseau à l'API. Vous pouvez saisir la visite manuellement via "Visite manuelle".`;
-  }
-}
-
-function displayPhotoAnalysis(r){
-  document.getElementById('photoStatus').textContent = 'Analyse terminée. Vérifiez les informations ci-dessous avant de confirmer.';
-  const matches = r.clientNomDetecte && r.clientNomDetecte !== 'INCONNU' ? findClientMatches(r.clientNomDetecte, 4) : [];
-  const bestScore = matches.length ? matches[0].score : 0;
-  const secondScore = matches.length>1 ? matches[1].score : 0;
-  const autoAssign = bestScore > 0.82 && (bestScore - secondScore) > 0.12;
-
-  let html = `<div class="form-row"><label>Client identifié</label>`;
-  if(autoAssign){
-    photoChosenClientId = matches[0].client.id;
-    html += `<div class="hint">Client reconnu automatiquement : <b>${escapeHtml(matches[0].client.raisonSociale)}</b> (correspondance à ${(bestScore*100).toFixed(0)}%). <a href="#" id="changeClientLink">Changer</a></div>`;
-  } else {
-    html += `<div class="hint">Confirmation nécessaire — sélectionnez le client correspondant :</div><div class="candidate-list" id="candidateList">`;
-    matches.forEach((m,i) => {
-      html += `<label class="candidate-item"><input type="radio" name="candClient" value="${m.client.id}" ${i===0?'checked':''}><span>${escapeHtml(m.client.raisonSociale)} <span class="hint">(${escapeHtml(m.client.ville||'')}, correspondance ${(m.score*100).toFixed(0)}%)</span></span></label>`;
-    });
-    html += `<label class="candidate-item"><input type="radio" name="candClient" value="__manual__"><span>Aucun de ces clients — rechercher manuellement</span></label></div>
-    <input type="text" id="photoManualSearch" placeholder="Rechercher un client..." style="display:none;margin-top:6px;width:100%;padding:7px;border:1px solid var(--border);border-radius:7px;">
-    <div id="photoManualResults" style="max-height:130px;overflow:auto;"></div>`;
-    photoChosenClientId = matches.length ? matches[0].client.id : null;
-  }
-  html += `</div>`;
-
-  html += `<div class="two-col">
-    <div class="form-row"><label>Date de visite</label><input type="date" id="pDate" value="${r.date||todayISO()}"></div>
-    <div class="form-row"><label>Interlocuteur</label><input type="text" id="pInterlocuteur" value="${escapeHtml(r.interlocuteur||'')}"></div>
-  </div>
-  <div class="form-row"><label>Compte rendu (transcrit)</label><textarea id="pCompteRendu">${escapeHtml(r.compteRendu||'')}</textarea></div>
-  <div class="two-col">
-    <div class="form-row"><label>Besoins identifiés</label><textarea id="pBesoins" style="min-height:50px;">${escapeHtml(r.besoins||'')}</textarea></div>
-    <div class="form-row"><label>Produits évoqués</label><textarea id="pProduits" style="min-height:50px;">${escapeHtml(r.produits||'')}</textarea></div>
-  </div>
-  <div class="two-col">
-    <div class="form-row"><label>Devis à prévoir</label><textarea id="pDevis" style="min-height:50px;">${escapeHtml(r.devis||'')}</textarea></div>
-    <div class="form-row"><label>Opportunités</label><textarea id="pOpportunites" style="min-height:50px;">${escapeHtml(r.opportunites||'')}</textarea></div>
-  </div>
-  <div class="two-col">
-    <div class="form-row"><label>Problèmes</label><textarea id="pProblemes" style="min-height:50px;">${escapeHtml(r.problemes||'')}</textarea></div>
-    <div class="form-row"><label>Action à réaliser</label><textarea id="pAction" style="min-height:50px;">${escapeHtml(r.action||'')}</textarea></div>
-  </div>
-  <div class="two-col">
-    <div class="form-row"><label>Date de relance recommandée</label><input type="date" id="pDateRelance" value="${r.dateRelance||''}"></div>
-    <div class="form-row"><label>Priorité</label><select id="pPriorite">
-      <option value="Haute" ${r.priorite==='Haute'?'selected':''}>🔴 Haute</option>
-      <option value="Moyenne" ${r.priorite==='Moyenne'?'selected':''}>🟠 Moyenne</option>
-      <option value="Faible" ${r.priorite==='Faible'?'selected':''}>🟢 Faible</option>
-    </select></div>
-  </div>
-  <div class="form-row"><label>Recommandation commerciale</label><textarea id="pRecommandation" style="min-height:50px;">${escapeHtml(r.recommandation||'')}</textarea></div>`;
-
-  if(r.incertain){
-    html += `<div class="uncertain-flag">Information incertaine – vérification nécessaire.${r.raisonIncertitude? ' '+escapeHtml(r.raisonIncertitude):''}</div>`;
-  }
-
-  document.getElementById('photoResultArea').innerHTML = html;
-  document.getElementById('photoResultArea').style.display = 'block';
-  document.getElementById('btnConfirmPhotoVisit').style.display = 'inline-block';
-
-  if(!autoAssign){
-    document.querySelectorAll('input[name="candClient"]').forEach(radio => radio.addEventListener('change', (e) => {
-      if(e.target.value==='__manual__'){
-        photoChosenClientId = null;
-        document.getElementById('photoManualSearch').style.display='block';
-      } else {
-        photoChosenClientId = e.target.value;
-        document.getElementById('photoManualSearch').style.display='none';
-      }
-    }));
-    const manualSearch = document.getElementById('photoManualSearch');
-    if(manualSearch) manualSearch.addEventListener('input', (e) => {
-      const res = searchClients(e.target.value);
-      document.getElementById('photoManualResults').innerHTML = res.map(c=>`<div class="candidate-item" data-id="${c.id}">${escapeHtml(c.raisonSociale)}</div>`).join('');
-      document.querySelectorAll('#photoManualResults .candidate-item').forEach(el=>el.addEventListener('click',()=>{
-        photoChosenClientId = el.dataset.id;
-        manualSearch.value = getClientById(el.dataset.id).raisonSociale;
-        document.getElementById('photoManualResults').innerHTML='';
-      }));
-    });
-  } else {
-    const link = document.getElementById('changeClientLink');
-    if(link) link.addEventListener('click', (e) => { e.preventDefault(); displayPhotoAnalysis(Object.assign({}, r, {clientNomDetecte:'INCONNU'})); });
-  }
-}
-
-document.getElementById('btnConfirmPhotoVisit').addEventListener('click', () => {
-  if(!photoChosenClientId){ showAppAlert('Veuillez sélectionner un client.'); return; }
-  const date = document.getElementById('pDate').value;
-  if(!date){ showAppAlert('Veuillez indiquer une date.'); return; }
-  const visit = {
-    id: uid(), date: date,
-    interlocuteur: document.getElementById('pInterlocuteur').value.trim(),
-    compteRendu: document.getElementById('pCompteRendu').value.trim(),
-    besoins: document.getElementById('pBesoins').value.trim(),
-    produits: document.getElementById('pProduits').value.trim(),
-    devis: document.getElementById('pDevis').value.trim(),
-    opportunites: document.getElementById('pOpportunites').value.trim(),
-    problemes: document.getElementById('pProblemes').value.trim(),
-    action: document.getElementById('pAction').value.trim(),
-    dateRelance: document.getElementById('pDateRelance').value || '',
-    priorite: document.getElementById('pPriorite').value || '',
-    recommandation: document.getElementById('pRecommandation').value.trim(),
-    incertain: !!(photoAnalysis && photoAnalysis.incertain), source: 'photo'
-  };
-  const entry = ensureClientEntry(photoChosenClientId);
-  entry.visits.push(visit);
-  saveStore(STORE);
-  closeModal('modalPhoto');
   renderAll();
 });
 
@@ -1412,7 +1222,7 @@ Aujourd'hui nous sommes le ${todayISO()} (format AAAA-MM-JJ).
 Tu reçois la transcription vocale (dictée à l'oral, imparfaite) d'un compte rendu de visite client. Cette transcription peut contenir, en plus du compte rendu lui-même, des instructions destinées à l'application comme "lance l'analyse" ou "enregistre la visite" : ignore-les complètement, elles ne font jamais partie du compte rendu.
 Voici la liste des raisons sociales de clients connus (choisis UNIQUEMENT parmi cette liste, ou "INCONNU" si aucune ne correspond clairement) : ${clientNames}
 Réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
-{"clientNomDetecte":"", "date":"AAAA-MM-JJ (aujourd'hui par défaut si aucune date n'est mentionnée)", "interlocuteur":"", "compteRendu":"", "besoins":"", "produits":"", "devis":"", "opportunites":"", "problemes":"", "action":"", "dateRelance":"AAAA-MM-JJ ou vide", "priorite":"Haute|Moyenne|Faible", "recommandation":"", "incertain": true/false, "raisonIncertitude":""}
+{"clientNomDetecte":"", "date":"AAAA-MM-JJ (aujourd'hui par défaut si aucune date n'est mentionnée)", "interlocuteur":"", "compteRendu":"", "besoins":"", "opportunites":"", "problemes":"", "dateRelance":"AAAA-MM-JJ ou vide", "recommandation":"", "incertain": true/false, "raisonIncertitude":""}
 Pour "compteRendu" : reformule le contenu du compte rendu (hors instructions à l'application) dans un français clair et professionnel, en corrigeant les artefacts de dictée vocale, sans changer le sens, sans supprimer d'information, et sans jamais ajouter un fait qui n'a pas été dit.
 N'invente jamais une information absente de la transcription. Laisse une valeur vide ("") si l'information n'est pas mentionnée.`;
   const messages = [{role:'user', content: `Transcription vocale :\n${transcript}`}];
@@ -1448,23 +1258,11 @@ function displayVoiceAnalysis(r){
   <div class="form-row"><label>Compte rendu (reformulé)</label><textarea id="vCompteRendu">${escapeHtml(r.compteRendu||'')}</textarea></div>
   <div class="two-col">
     <div class="form-row"><label>Besoins identifiés</label><textarea id="vBesoins" style="min-height:50px;">${escapeHtml(r.besoins||'')}</textarea></div>
-    <div class="form-row"><label>Produits évoqués</label><textarea id="vProduits" style="min-height:50px;">${escapeHtml(r.produits||'')}</textarea></div>
-  </div>
-  <div class="two-col">
-    <div class="form-row"><label>Devis à prévoir</label><textarea id="vDevis" style="min-height:50px;">${escapeHtml(r.devis||'')}</textarea></div>
     <div class="form-row"><label>Opportunités</label><textarea id="vOpportunites" style="min-height:50px;">${escapeHtml(r.opportunites||'')}</textarea></div>
   </div>
   <div class="two-col">
     <div class="form-row"><label>Problèmes</label><textarea id="vProblemes" style="min-height:50px;">${escapeHtml(r.problemes||'')}</textarea></div>
-    <div class="form-row"><label>Action à réaliser</label><textarea id="vAction" style="min-height:50px;">${escapeHtml(r.action||'')}</textarea></div>
-  </div>
-  <div class="two-col">
     <div class="form-row"><label>Date de relance recommandée</label><input type="date" id="vDateRelance" value="${r.dateRelance||''}"></div>
-    <div class="form-row"><label>Priorité</label><select id="vPriorite">
-      <option value="Haute" ${r.priorite==='Haute'?'selected':''}>🔴 Haute</option>
-      <option value="Moyenne" ${r.priorite==='Moyenne'?'selected':''}>🟠 Moyenne</option>
-      <option value="Faible" ${r.priorite==='Faible'?'selected':''}>🟢 Faible</option>
-    </select></div>
   </div>
   <div class="form-row"><label>Recommandation commerciale</label><textarea id="vRecommandation" style="min-height:50px;">${escapeHtml(r.recommandation||'')}</textarea></div>`;
 
@@ -1511,13 +1309,9 @@ document.getElementById('btnConfirmVoiceVisit').addEventListener('click', () => 
     interlocuteur: document.getElementById('vInterlocuteur').value.trim(),
     compteRendu: document.getElementById('vCompteRendu').value.trim(),
     besoins: document.getElementById('vBesoins').value.trim(),
-    produits: document.getElementById('vProduits').value.trim(),
-    devis: document.getElementById('vDevis').value.trim(),
     opportunites: document.getElementById('vOpportunites').value.trim(),
     problemes: document.getElementById('vProblemes').value.trim(),
-    action: document.getElementById('vAction').value.trim(),
     dateRelance: document.getElementById('vDateRelance').value || '',
-    priorite: document.getElementById('vPriorite').value || '',
     recommandation: document.getElementById('vRecommandation').value.trim(),
     incertain: !!(voiceAnalysis && voiceAnalysis.incertain), source: 'voix'
   };
@@ -1526,6 +1320,162 @@ document.getElementById('btnConfirmVoiceVisit').addEventListener('click', () => 
   saveStore(STORE);
   closeModal('modalVoice');
   renderAll();
+});
+
+/* ===================== RDV → CALENDRIER (.ics universel Google/Samsung/Outlook) ===================== */
+let agendaExtracted = null;
+let agendaVoiceRecognition = null;
+
+document.getElementById('btnNewAgenda').addEventListener('click', () => {
+  document.getElementById('agendaInput').value = '';
+  document.getElementById('agendaStatus').textContent = '';
+  document.getElementById('agendaResultArea').style.display = 'none';
+  document.getElementById('btnAddToCalendar').style.display = 'none';
+  agendaExtracted = null;
+  openModal('modalAgenda');
+});
+document.querySelectorAll('#modalAgenda [data-close]').forEach(btn => btn.addEventListener('click', () => {
+  if(agendaVoiceRecognition){ try{ agendaVoiceRecognition.stop(); }catch(e){} }
+}));
+
+document.getElementById('btnAgendaStartVoice').addEventListener('click', () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const statusEl = document.getElementById('agendaStatus');
+  if(!SR){
+    statusEl.textContent = "Reconnaissance vocale non disponible sur ce navigateur. Tapez votre phrase directement, ou utilisez le micro du clavier.";
+    return;
+  }
+  try{
+    agendaVoiceRecognition = new SR();
+    agendaVoiceRecognition.lang = 'fr-FR';
+    agendaVoiceRecognition.continuous = false;
+    agendaVoiceRecognition.interimResults = true;
+    let lastText = '';
+    agendaVoiceRecognition.onresult = (event) => {
+      const lastIdx = event.results.length - 1;
+      if(lastIdx < 0) return;
+      lastText = event.results[lastIdx][0].transcript;
+      document.getElementById('agendaInput').value = lastText;
+    };
+    agendaVoiceRecognition.onerror = (event) => {
+      if(event.error !== 'no-speech' && event.error !== 'aborted'){
+        statusEl.textContent = "Micro indisponible (" + event.error + "). Tapez votre phrase directement.";
+      }
+    };
+    agendaVoiceRecognition.onend = () => { statusEl.textContent = ''; };
+    agendaVoiceRecognition.start();
+    statusEl.textContent = '🔴 Parlez maintenant...';
+  }catch(err){
+    statusEl.textContent = "Impossible de démarrer le micro (" + err.message + ").";
+  }
+});
+
+document.getElementById('btnAgendaAnalyze').addEventListener('click', async () => {
+  if(agendaVoiceRecognition){ try{ agendaVoiceRecognition.stop(); }catch(e){} }
+  const text = document.getElementById('agendaInput').value.trim();
+  const statusEl = document.getElementById('agendaStatus');
+  if(!text){ showAppAlert('Veuillez décrire le rendez-vous.'); return; }
+  statusEl.innerHTML = '<span class="spinner"></span>Analyse en cours...';
+  try{
+    const result = await analyzeAgendaText(text);
+    agendaExtracted = result;
+    document.getElementById('agTitre').value = result.titre || 'Rendez-vous';
+    document.getElementById('agDate').value = result.date || todayISO();
+    document.getElementById('agHeureDebut').value = result.heureDebut || '09:00';
+    document.getElementById('agHeureFin').value = result.heureFin || '10:00';
+    document.getElementById('agDescription').value = result.description || '';
+    let lieu = '';
+    if(result.clientNomDetecte && result.clientNomDetecte !== 'INCONNU'){
+      const matches = findClientMatches(result.clientNomDetecte, 1);
+      if(matches.length && matches[0].score > 0.6){
+        const c = matches[0].client;
+        document.getElementById('agClientNom').value = c.raisonSociale;
+        lieu = [c.adresse, c.cp, c.ville].filter(Boolean).join(' ');
+      } else {
+        document.getElementById('agClientNom').value = result.clientNomDetecte + ' (non reconnu dans la liste clients)';
+      }
+    } else {
+      document.getElementById('agClientNom').value = '';
+    }
+    document.getElementById('agLieu').value = lieu;
+    document.getElementById('agendaResultArea').style.display = 'block';
+    document.getElementById('btnAddToCalendar').style.display = 'inline-block';
+    statusEl.textContent = "Analyse terminée. Vérifiez les informations avant d'ajouter au calendrier.";
+  }catch(err){
+    console.error(err);
+    statusEl.textContent = "Échec de l'analyse IA (" + err.message + "). Vous pouvez remplir les champs manuellement ci-dessous.";
+    document.getElementById('agTitre').value = 'Rendez-vous';
+    document.getElementById('agDate').value = todayISO();
+    document.getElementById('agHeureDebut').value = '09:00';
+    document.getElementById('agHeureFin').value = '10:00';
+    document.getElementById('agDescription').value = text;
+    document.getElementById('agLieu').value = '';
+    document.getElementById('agClientNom').value = '';
+    document.getElementById('agendaResultArea').style.display = 'block';
+    document.getElementById('btnAddToCalendar').style.display = 'inline-block';
+  }
+});
+
+async function analyzeAgendaText(text){
+  const clientNames = BASE_CLIENTS.map(c=>c.raisonSociale).join(', ');
+  const todayDow = new Date().toLocaleDateString('fr-FR', {weekday:'long'});
+  const system = `Tu es un assistant qui extrait les informations d'un rendez-vous à partir d'une description en langage naturel dictée ou tapée par un technico-commercial en négoce de matériaux bois/panneaux (Houdard).
+Aujourd'hui nous sommes le ${todayISO()} (${todayDow}).
+Voici la liste des raisons sociales de clients connus (pour identifier si le RDV a lieu chez l'un d'eux, choisis UNIQUEMENT parmi cette liste ou indique "INCONNU" si aucune ne correspond ou si ce n'est pas chez un client) : ${clientNames}
+Réponds UNIQUEMENT avec un objet JSON strict (aucun texte avant/après, aucun markdown), avec exactement ces clés :
+{"titre":"", "clientNomDetecte":"", "date":"AAAA-MM-JJ", "heureDebut":"HH:MM", "heureFin":"HH:MM", "description":""}
+Interprète les expressions de date/heure relatives (aujourd'hui, demain, vendredi prochain, dans 3 jours, 14h, 14h30, etc.) par rapport à la date du jour ci-dessus. Si l'heure de fin n'est pas précisée, mets une heure de début + 1 heure. Si aucune heure n'est mentionnée, propose 09:00-10:00. N'invente aucune information non mentionnée pour le titre ou la description.`;
+  const messages = [{role:'user', content: text}];
+  return await callClaude(messages, system);
+}
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function toICSDateTime(dateStr, timeStr){
+  const [y,m,d] = dateStr.split('-');
+  const [hh,mm] = (timeStr||'09:00').split(':');
+  return `${y}${m}${d}T${pad2(hh)}${pad2(mm)}00`;
+}
+function icsEscape(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
+
+document.getElementById('btnAddToCalendar').addEventListener('click', () => {
+  const titre = document.getElementById('agTitre').value.trim() || 'Rendez-vous';
+  const date = document.getElementById('agDate').value;
+  const heureDebut = document.getElementById('agHeureDebut').value || '09:00';
+  const heureFin = document.getElementById('agHeureFin').value || '10:00';
+  const lieu = document.getElementById('agLieu').value.trim();
+  const description = document.getElementById('agDescription').value.trim();
+  if(!date){ showAppAlert('Veuillez indiquer une date.'); return; }
+
+  const now = new Date();
+  const dtStamp = now.getUTCFullYear() + pad2(now.getUTCMonth()+1) + pad2(now.getUTCDate()) + 'T' + pad2(now.getUTCHours()) + pad2(now.getUTCMinutes()) + pad2(now.getUTCSeconds()) + 'Z';
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Houdard Suivi Visites//FR',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    'UID:' + uid() + '@houdard-suivi-visites',
+    'DTSTAMP:' + dtStamp,
+    'DTSTART:' + toICSDateTime(date, heureDebut),
+    'DTEND:' + toICSDateTime(date, heureFin),
+    'SUMMARY:' + icsEscape(titre),
+    lieu ? 'LOCATION:' + icsEscape(lieu) : '',
+    description ? 'DESCRIPTION:' + icsEscape(description) : '',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+
+  try{
+    const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'rdv_' + date.replace(/-/g,'') + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showAppAlert("Fichier de rendez-vous téléchargé. Ouvrez-le depuis vos téléchargements (ou la notification de téléchargement) : votre téléphone proposera de l'ajouter directement à votre calendrier (Google, Samsung ou Outlook).");
+  }catch(err){
+    showAppAlert("Le téléchargement automatique n'est pas disponible dans cet environnement (fonctionne normalement sur le site hébergé). Erreur : " + err.message);
+  }
 });
 
 /* ===================== ACTIONS ===================== */
@@ -1594,23 +1544,6 @@ document.getElementById('btnSaveAction').addEventListener('click', () => {
   saveStore(STORE);
   closeModal('modalAction');
   renderDashboard(); renderActionsTable();
-});
-
-/* ===================== SYNCHRONISATION MANUELLE ===================== */
-document.getElementById('btnForceSync').addEventListener('click', async () => {
-  const btn = document.getElementById('btnForceSync');
-  const original = btn.textContent;
-  btn.textContent = '⏳ Synchronisation...'; btn.disabled = true;
-  if(!firebaseUser && !hasArtifactStorage()){
-    btn.textContent = original; btn.disabled = false;
-    showAppAlert("Aucune synchronisation multi-appareils active. Configurez la synchronisation cloud dans « ⚙️ Paramètres », ou utilisez cet outil dans Claude, ou utilisez Exporter / Coller des données pour transférer manuellement.");
-    return;
-  }
-  const ok = await saveStore(STORE);
-  btn.textContent = original; btn.disabled = false;
-  showAppAlert(ok
-    ? "Données de cet appareil envoyées avec succès. Elles seront visibles sur vos autres appareils dès leur prochaine ouverture (immédiatement si la synchronisation cloud est active)."
-    : "Échec de la synchronisation (problème réseau ou de connexion). Vos données restent conservées sur cet appareil ; réessayez plus tard, ou utilisez Exporter / Coller des données en secours.");
 });
 
 /* ===================== PARAMÈTRES / SYNCHRONISATION CLOUD FIREBASE ===================== */
