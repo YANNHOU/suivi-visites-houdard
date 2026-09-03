@@ -1296,13 +1296,68 @@ document.getElementById('btnNewVisitVoice').addEventListener('click', () => {
   document.getElementById('btnConfirmVoiceVisit').style.display = 'none';
   document.getElementById('btnStartVoice').style.display = 'inline-block';
   document.getElementById('btnStopVoice').style.display = 'none';
+  voiceManualTranscript = '';
+  voiceUserStopped = false;
+  voiceRecognizing = false;
   openModal('modalVoice');
 });
 
 // Arrête proprement le micro si l'utilisateur ferme la fenêtre en cours d'enregistrement.
 document.querySelectorAll('#modalVoice [data-close]').forEach(btn => btn.addEventListener('click', () => {
+  voiceUserStopped = true; voiceRecognizing = false;
   if(voiceRecognition){ try{ voiceRecognition.stop(); }catch(e){} }
 }));
+
+// Le texte final est reconstruit entièrement de notre côté (voiceManualTranscript), jamais à partir
+// du texte cumulatif renvoyé par le moteur du navigateur : certains navigateurs mobiles (ex. Samsung
+// Internet) renvoient un texte déjà cumulé et incohérent en mode "continuous", ce qui provoquait des
+// mots dupliqués. On relance nous-mêmes une courte écoute à chaque pause, pour simuler un mode continu
+// fiable sur tous les navigateurs.
+let voiceManualTranscript = '';
+let voiceRecognizing = false;
+let voiceUserStopped = false;
+
+function startOneListeningPass(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const statusEl = document.getElementById('voiceRecStatus');
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'fr-FR';
+  voiceRecognition.continuous = false; // on gère nous-mêmes la continuité, voir commentaire ci-dessus
+  voiceRecognition.interimResults = true;
+
+  voiceRecognition.onresult = (event) => {
+    let interim = '';
+    for(let i = 0; i < event.results.length; i++){
+      const t = event.results[i][0].transcript;
+      if(event.results[i].isFinal){
+        const clean = t.trim();
+        if(clean) voiceManualTranscript = (voiceManualTranscript ? voiceManualTranscript + ' ' : '') + clean;
+      } else {
+        interim = t;
+      }
+    }
+    document.getElementById('voiceTranscript').value = (voiceManualTranscript + (interim ? ' ' + interim : '')).trim();
+  };
+  voiceRecognition.onerror = (event) => {
+    // "no-speech" (silence) et "aborted" (arrêt volontaire) sont normaux en écoute continue simulée :
+    // on laisse simplement onend relancer une nouvelle écoute, sans afficher d'erreur à l'utilisateur.
+    if(event.error !== 'no-speech' && event.error !== 'aborted'){
+      voiceRecognizing = false;
+      statusEl.textContent = "Micro indisponible (" + event.error + "). Cette fonctionnalité peut être bloquée dans cet environnement — utilisez le micro du clavier de votre téléphone dans « Visite manuelle » à la place.";
+      document.getElementById('btnStartVoice').style.display = 'inline-block';
+      document.getElementById('btnStopVoice').style.display = 'none';
+    }
+  };
+  voiceRecognition.onend = () => {
+    if(voiceRecognizing && !voiceUserStopped){
+      try{ startOneListeningPass(); }catch(e){ voiceRecognizing = false; }
+    } else {
+      document.getElementById('btnStartVoice').style.display = 'inline-block';
+      document.getElementById('btnStopVoice').style.display = 'none';
+    }
+  };
+  voiceRecognition.start();
+}
 
 document.getElementById('btnStartVoice').addEventListener('click', () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1312,42 +1367,22 @@ document.getElementById('btnStartVoice').addEventListener('click', () => {
     return;
   }
   try{
-    voiceRecognition = new SR();
-    voiceRecognition.lang = 'fr-FR';
-    voiceRecognition.continuous = true;
-    voiceRecognition.interimResults = true;
-    // Reconstruit systématiquement le texte à partir de l'intégralité de event.results
-    // (et non en ajoutant au fur et à mesure), car certains navigateurs mobiles renvoient
-    // plusieurs fois le même segment "final" — l'accumulation provoquait des mots en double/triple.
-    voiceRecognition.onresult = (event) => {
-      let finalText = '';
-      let interim = '';
-      for(let i = 0; i < event.results.length; i++){
-        const t = event.results[i][0].transcript;
-        if(event.results[i].isFinal) finalText += t + ' ';
-        else interim += t;
-      }
-      document.getElementById('voiceTranscript').value = (finalText + interim).trim();
-    };
-    voiceRecognition.onerror = (event) => {
-      statusEl.textContent = "Micro indisponible (" + event.error + "). Cette fonctionnalité peut être bloquée dans cet environnement — utilisez le micro du clavier de votre téléphone dans « Visite manuelle » à la place.";
-      document.getElementById('btnStartVoice').style.display = 'inline-block';
-      document.getElementById('btnStopVoice').style.display = 'none';
-    };
-    voiceRecognition.onend = () => {
-      document.getElementById('btnStartVoice').style.display = 'inline-block';
-      document.getElementById('btnStopVoice').style.display = 'none';
-    };
-    voiceRecognition.start();
+    voiceManualTranscript = '';
+    voiceUserStopped = false;
+    voiceRecognizing = true;
+    document.getElementById('voiceTranscript').value = '';
+    startOneListeningPass();
     statusEl.textContent = '🔴 Enregistrement en cours... parlez, puis appuyez sur "Terminer et analyser".';
     document.getElementById('btnStartVoice').style.display = 'none';
     document.getElementById('btnStopVoice').style.display = 'inline-block';
   }catch(err){
+    voiceRecognizing = false;
     statusEl.textContent = "Impossible de démarrer le micro (" + err.message + "). Utilisez le micro du clavier de votre téléphone dans « Visite manuelle » à la place.";
   }
 });
 
 document.getElementById('btnStopVoice').addEventListener('click', async () => {
+  voiceUserStopped = true; voiceRecognizing = false;
   if(voiceRecognition){ try{ voiceRecognition.stop(); }catch(e){} }
   document.getElementById('btnStopVoice').style.display = 'none';
   const transcript = document.getElementById('voiceTranscript').value.trim();
